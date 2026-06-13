@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { DepositPage } from './pages/deposit.page';
+import { createAccount, UNKNOWN_ACCOUNT_ID } from './support/accounts';
 
 test.describe('Deposit', () => {
   let depositPage: DepositPage;
+  let emptyId: string;
 
   test.beforeEach(async ({ page, request }) => {
-    const res = await request.post('http://localhost:8080/test/reset');
-    if (!res.ok()) throw new Error(`DB reset failed: ${res.status()} — restart the Spring Boot server`);
+    emptyId = await createAccount(request, 0);
     depositPage = new DepositPage(page);
     await depositPage.goto();
   });
@@ -16,12 +17,12 @@ test.describe('Deposit', () => {
   });
 
   test('Deposit Now button is disabled when only account is filled', async () => {
-    await depositPage.accountInput.fill('C456');
+    await depositPage.accountInput.fill(emptyId);
     await expect(depositPage.depositButton).toBeDisabled();
   });
 
-  test('happy path — deposit $50 to C456 shows receipt', async () => {
-    await depositPage.fillAndSubmit('C456', 50);
+  test('happy path — deposit $50 shows receipt', async () => {
+    await depositPage.fillAndSubmit(emptyId, 50);
 
     await expect(depositPage.receipt).toBeVisible();
     await expect(depositPage.receiptHeader).toContainText('Deposit Complete');
@@ -33,28 +34,28 @@ test.describe('Deposit', () => {
   });
 
   test('receipt shows correct account ID', async () => {
-    await depositPage.fillAndSubmit('C456', 50);
+    await depositPage.fillAndSubmit(emptyId, 50);
 
     await expect(depositPage.receipt).toBeVisible();
-    await expect(depositPage.receiptRowAt(1)).toContainText('C456');
+    await expect(depositPage.receiptRowAt(1)).toContainText(emptyId);
   });
 
   test('unknown account shows error alert', async () => {
-    await depositPage.fillAndSubmit('XXXX', 10);
+    await depositPage.fillAndSubmit(UNKNOWN_ACCOUNT_ID, 10);
 
     await expect(depositPage.errorAlert).toBeVisible();
     await expect(depositPage.receipt).not.toBeVisible();
   });
 
   test('amount below minimum shows error alert', async () => {
-    await depositPage.fillAndSubmit('C456', 0.001);
+    await depositPage.fillAndSubmit(emptyId, 0.001);
 
     await expect(depositPage.errorAlert).toBeVisible();
     await expect(depositPage.receipt).not.toBeVisible();
   });
 
   test('Clear button resets the form and hides receipt', async () => {
-    await depositPage.fillAndSubmit('C456', 50);
+    await depositPage.fillAndSubmit(emptyId, 50);
     await expect(depositPage.receipt).toBeVisible();
 
     await depositPage.clearButton.click();

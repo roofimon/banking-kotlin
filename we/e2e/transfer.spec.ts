@@ -1,12 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { TransferPage } from './pages/transfer.page';
+import { createAccount } from './support/accounts';
 
 test.describe('Transfer Money', () => {
   let transferPage: TransferPage;
+  let richId: string;
+  let emptyId: string;
 
   test.beforeEach(async ({ page, request }) => {
-    const res = await request.post('http://localhost:8080/test/reset');
-    if (!res.ok()) throw new Error(`DB reset failed: ${res.status()} — restart the Spring Boot server`);
+    richId = await createAccount(request, 100);
+    emptyId = await createAccount(request, 0);
     transferPage = new TransferPage(page);
     await transferPage.goto();
   });
@@ -16,12 +19,12 @@ test.describe('Transfer Money', () => {
   });
 
   test('Send Now button is disabled when only source is filled', async () => {
-    await transferPage.fromInput.fill('A123');
+    await transferPage.fromInput.fill(richId);
     await expect(transferPage.sendButton).toBeDisabled();
   });
 
-  test('happy path — transfer $50 from A123 to C456 shows receipt', async () => {
-    await transferPage.fillAndSubmit('A123', 50, 'C456');
+  test('happy path — transfer $50 shows receipt', async () => {
+    await transferPage.fillAndSubmit(richId, 50, emptyId);
 
     await expect(transferPage.receipt).toBeVisible();
     await expect(transferPage.receiptHeader).toContainText('Transfer Complete');
@@ -37,30 +40,30 @@ test.describe('Transfer Money', () => {
   });
 
   test('receipt shows correct account IDs', async () => {
-    await transferPage.fillAndSubmit('A123', 50, 'C456');
+    await transferPage.fillAndSubmit(richId, 50, emptyId);
 
     await expect(transferPage.receipt).toBeVisible();
-    await expect(transferPage.receiptRowAt(2)).toContainText('A123');
-    await expect(transferPage.receiptRowAt(3)).toContainText('C456');
+    await expect(transferPage.receiptRowAt(2)).toContainText(richId);
+    await expect(transferPage.receiptRowAt(3)).toContainText(emptyId);
   });
 
   test('insufficient funds shows error alert', async () => {
-    // C456 starts at $0 — cannot send $200
-    await transferPage.fillAndSubmit('C456', 200, 'A123');
+    // emptyId starts at $0 — cannot send $200
+    await transferPage.fillAndSubmit(emptyId, 200, richId);
 
     await expect(transferPage.errorAlert).toBeVisible();
     await expect(transferPage.receipt).not.toBeVisible();
   });
 
   test('amount below minimum shows error alert', async () => {
-    await transferPage.fillAndSubmit('A123', 0.001, 'C456');
+    await transferPage.fillAndSubmit(richId, 0.001, emptyId);
 
     await expect(transferPage.errorAlert).toBeVisible();
     await expect(transferPage.receipt).not.toBeVisible();
   });
 
   test('Clear button resets the form and hides receipt', async () => {
-    await transferPage.fillAndSubmit('A123', 50, 'C456');
+    await transferPage.fillAndSubmit(richId, 50, emptyId);
     await expect(transferPage.receipt).toBeVisible();
 
     await transferPage.clearButton.click();
