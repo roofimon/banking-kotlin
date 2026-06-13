@@ -1,5 +1,6 @@
 package com.bank.djackatron2.adapter.inbound.web
 
+import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.domain.Account
@@ -14,7 +15,8 @@ class AccountControllerTest {
 
     private val repository: AccountRepositoryPort = mock(AccountRepositoryPort::class.java)
     private val transferUseCase: TransferUseCase = mock(TransferUseCase::class.java)
-    private val controller: AccountController = AccountController(repository, transferUseCase)
+    private val depositUseCase: DepositUseCase = mock(DepositUseCase::class.java)
+    private val controller: AccountController = AccountController(repository, transferUseCase, depositUseCase)
 
     @Test
     fun testHandleById() {
@@ -42,6 +44,19 @@ class AccountControllerTest {
 
         //then
         verify(transferUseCase).transfer(100.00, srcId, destId)
+    }
+
+    @Test
+    fun testHandleDeposit() {
+        //given
+        val accountId = "C456"
+        val amount = 20.00
+
+        //when
+        controller.handleDeposit(accountId, amount)
+
+        //then
+        verify(depositUseCase).deposit(amount, accountId)
     }
 
 }

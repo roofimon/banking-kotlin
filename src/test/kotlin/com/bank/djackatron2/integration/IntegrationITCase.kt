@@ -2,6 +2,7 @@ package com.bank.djackatron2.integration
 
 import com.bank.djackatron2.adapter.outbound.persistence.JdbcAccountRepository
 import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
+import com.bank.djackatron2.application.usecase.DepositMoneyUseCase
 import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
 import com.bank.djackatron2.domain.InsufficientFundsException
 import org.hamcrest.CoreMatchers
@@ -38,6 +39,18 @@ class IntegrationITCase {
 
         assertThat(accountRepository.findById("A123").getBalance(), CoreMatchers.equalTo(90.00))
         assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(10.00))
+    }
+
+    @Test
+    fun depositTwentyDollars() {
+        val accountRepository = JdbcAccountRepository(JdbcTemplate(dataSource()))
+        val depositService = DepositMoneyUseCase(accountRepository)
+
+        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))
+
+        depositService.deposit(20.00, "C456")
+
+        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(20.00))
     }
 
 }
