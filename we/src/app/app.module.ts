@@ -8,13 +8,17 @@ import { AppComponent } from './app.component';
 import { AccountLookupComponent } from './components/account-lookup/account-lookup.component';
 import { TransferComponent } from './components/transfer/transfer.component';
 import { TransferReceiptComponent } from './components/transfer-receipt/transfer-receipt.component';
+import { DepositComponent } from './components/deposit/deposit.component';
+import { DepositReceiptComponent } from './components/deposit-receipt/deposit-receipt.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     AccountLookupComponent,
     TransferComponent,
-    TransferReceiptComponent
+    TransferReceiptComponent,
+    DepositComponent,
+    DepositReceiptComponent,
   ],
   imports: [
     BrowserModule,

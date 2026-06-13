@@ -29,4 +29,16 @@ test.describe('Navigation', () => {
     const sendLink = page.locator('a', { hasText: 'Send' });
     await expect(sendLink).toHaveClass(/active-link/);
   });
+
+  test('clicking Deposit navigates to /deposit', async ({ page }) => {
+    await page.goto('/account');
+    await page.locator('a', { hasText: 'Deposit' }).click();
+    await expect(page).toHaveURL(/\/deposit/);
+  });
+
+  test('active nav link has active-link class on /deposit', async ({ page }) => {
+    await page.goto('/deposit');
+    const depositLink = page.locator('a', { hasText: 'Deposit' });
+    await expect(depositLink).toHaveClass(/active-link/);
+  });
 });

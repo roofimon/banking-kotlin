@@ -1,5 +1,6 @@
 package com.bank.djackatron2.adapter.inbound.web
 
+import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.domain.InsufficientFundsException
@@ -13,7 +14,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/account")
 class AccountController(
     private val repository: AccountRepositoryPort,
-    private val transferUseCase: TransferUseCase
+    private val transferUseCase: TransferUseCase,
+    private val depositUseCase: DepositUseCase,
 ) {
 
     @GetMapping("/{id}")
@@ -27,4 +29,10 @@ class AccountController(
         @PathVariable("amount") amount: Double,
         @PathVariable("destId") destId: String
     ) = transferUseCase.transfer(amount, srcId, destId)
+
+    @PostMapping("/{id}/deposit/{amount}")
+    fun handleDeposit(
+        @PathVariable("id") accountId: String,
+        @PathVariable("amount") amount: Double
+    ) = depositUseCase.deposit(amount, accountId)
 }

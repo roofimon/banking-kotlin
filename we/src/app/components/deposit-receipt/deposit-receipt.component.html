@@ -1,0 +1,16 @@
+<div class="cb-receipt">
+  <div class="cb-receipt-header">
+    <div class="cb-check">✓</div>
+    Deposit Complete
+  </div>
+  <div class="cb-receipt-body">
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">Amount Deposited</span>
+      <span class="cb-receipt-value">{{ receipt.depositAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">Account · {{ receipt.finalAccount.id }}</span>
+      <span class="cb-receipt-value">{{ receipt.finalAccount.balance | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
+  </div>
+</div>
