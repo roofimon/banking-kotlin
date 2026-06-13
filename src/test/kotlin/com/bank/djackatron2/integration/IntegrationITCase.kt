@@ -1,9 +1,9 @@
 package com.bank.djackatron2.integration
 
+import com.bank.djackatron2.adapter.outbound.persistence.JdbcAccountRepository
+import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
+import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
 import com.bank.djackatron2.domain.InsufficientFundsException
-import com.bank.djackatron2.repository.internal.JdbcAccountRepository
-import com.bank.djackatron2.service.internal.DefaultTransferService
-import com.bank.djackatron2.service.internal.ZeroFeePolicy
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
@@ -29,7 +29,7 @@ class IntegrationITCase {
     fun transferTenDollars() {
         val feePolicy = ZeroFeePolicy()
         val accountRepository = JdbcAccountRepository(JdbcTemplate(dataSource()))
-        val transferService = DefaultTransferService(accountRepository, feePolicy)
+        val transferService = TransferMoneyUseCase(accountRepository, feePolicy)
 
         assertThat(accountRepository.findById("A123").getBalance(), CoreMatchers.equalTo(100.00))
         assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))

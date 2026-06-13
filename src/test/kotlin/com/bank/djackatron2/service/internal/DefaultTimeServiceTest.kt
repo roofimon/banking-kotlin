@@ -1,4 +1,4 @@
-package com.bank.djackatron2.service.internal
+package com.bank.djackatron2.adapter.outbound.service
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
