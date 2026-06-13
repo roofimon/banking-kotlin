@@ -1,18 +1,24 @@
 package com.bank.djackatron2.application.usecase
 
 import com.bank.djackatron2.application.exception.OutOfServiceException
-import com.bank.djackatron2.port.inbound.TransferUseCase
-import com.bank.djackatron2.port.outbound.*
-import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.InsufficientFundsException
 import com.bank.djackatron2.domain.TransferReceipt
+import com.bank.djackatron2.domain.event.AccountCreditedEvent
+import com.bank.djackatron2.domain.event.AccountDebitedEvent
+import com.bank.djackatron2.port.inbound.TransferUseCase
+import com.bank.djackatron2.port.outbound.AccountRepositoryPort
+import com.bank.djackatron2.port.outbound.EventStorePort
+import com.bank.djackatron2.port.outbound.FeePolicyPort
+import com.bank.djackatron2.port.outbound.TimeServicePort
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.time.LocalTime
 
 @Service
 class TransferMoneyUseCase(
     private val accountRepository: AccountRepositoryPort,
     private val feePolicy: FeePolicyPort,
+    private val eventStore: EventStorePort,
 ) : TransferUseCase {
 
     private var minimumTransferAmount = 1.00
@@ -27,8 +33,8 @@ class TransferMoneyUseCase(
             throw OutOfServiceException()
         }
 
-        val srcAcct: Account = accountRepository.findById(srcAcctId)
-        val dstAcct: Account = accountRepository.findById(dstAcctId)
+        val srcAcct = accountRepository.findById(srcAcctId)
+        val dstAcct = accountRepository.findById(dstAcctId)
 
         val receipt = TransferReceipt(
             initialSourceAccountCopy = srcAcct,
@@ -39,8 +45,8 @@ class TransferMoneyUseCase(
         if (fee > 0) {
             try {
                 srcAcct.debit(fee)
+                eventStore.append(AccountDebitedEvent(srcAcctId, fee, Instant.now()))
             } catch (e: InsufficientFundsException) {
-                // TODO Auto-generated catch block
                 e.printStackTrace()
             }
         }
@@ -56,8 +62,8 @@ class TransferMoneyUseCase(
 
         dstAcct.credit(amount)
 
-        accountRepository.updateBalance(srcAcct)
-        accountRepository.updateBalance(dstAcct)
+        eventStore.append(AccountDebitedEvent(srcAcctId, amount, Instant.now()))
+        eventStore.append(AccountCreditedEvent(dstAcctId, amount, Instant.now()))
 
         receipt.setFinalSourceAccount(srcAcct)
         receipt.setFinalDestinationAccount(dstAcct)

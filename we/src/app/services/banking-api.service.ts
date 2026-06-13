@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { Account } from '../models/account.model';
 import { TransferReceipt } from '../models/transfer-receipt.model';
 import { DepositReceipt } from '../models/deposit-receipt.model';
+import { AccountEvent } from '../models/account-event.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +26,12 @@ export class BankingApiService {
         `${this.baseUrl}/account/${srcId}/transfer/${amount}/to/${destId}`,
         null
       )
+      .pipe(catchError(this.handleError));
+  }
+
+  getHistory(accountId: string): Observable<AccountEvent[]> {
+    return this.http
+      .get<AccountEvent[]>(`${this.baseUrl}/account/${accountId}/history`)
       .pipe(catchError(this.handleError));
   }
 

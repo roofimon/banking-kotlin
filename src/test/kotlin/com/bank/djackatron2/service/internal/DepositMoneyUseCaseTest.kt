@@ -1,11 +1,12 @@
 package com.bank.djackatron2.application.usecase
 
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.A123_ID
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.A123_INITIAL_BAL
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.C456_ID
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.C456_INITIAL_BAL
-import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.Z999_ID
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_ID
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_INITIAL_BAL
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_ID
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_INITIAL_BAL
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.Z999_ID
+import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventStore
 import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import org.hamcrest.CoreMatchers.equalTo
@@ -20,13 +21,18 @@ import kotlin.test.fail
 @TestInstance(PER_CLASS)
 class DepositMoneyUseCaseTest {
 
+    private lateinit var eventStore: InMemoryEventStore
     private lateinit var accountRepository: AccountRepositoryPort
     private lateinit var depositService: DepositUseCase
 
     @BeforeEach
     fun setUp() {
-        accountRepository = SimpleAccountRepository()
-        depositService = DepositMoneyUseCase(accountRepository)
+        eventStore = InMemoryEventStore()
+        accountRepository = InMemoryEventSourcedAccountRepository(
+            mapOf(A123_ID to A123_INITIAL_BAL, C456_ID to C456_INITIAL_BAL),
+            eventStore
+        )
+        depositService = DepositMoneyUseCase(accountRepository, eventStore)
 
         assertThat(accountRepository.findById(A123_ID).getBalance(), equalTo(A123_INITIAL_BAL))
         assertThat(accountRepository.findById(C456_ID).getBalance(), equalTo(C456_INITIAL_BAL))
@@ -92,11 +98,11 @@ class DepositMoneyUseCaseTest {
 
     @Test
     fun testCustomizedMinimumDepositAmount() {
-        depositService.deposit(1.00, C456_ID) // fine with default 0.01 minimum
+        depositService.deposit(1.00, C456_ID)
         depositService.setMinimumDepositAmount(5.00)
-        depositService.deposit(5.00, C456_ID) // fine against new minimum
+        depositService.deposit(5.00, C456_ID)
         try {
-            depositService.deposit(3.00, C456_ID) // violates new minimum
+            depositService.deposit(3.00, C456_ID)
             fail("expected IllegalArgumentException on 3.00 deposit that violates 5.00 minimum")
         } catch (ex: IllegalArgumentException) {
         }

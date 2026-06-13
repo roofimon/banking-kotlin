@@ -1,0 +1,71 @@
+<div class="cb-page cb-history-page">
+  <h1 class="cb-page-title">Transaction History</h1>
+
+  <div class="cb-card">
+    <div class="mb-4">
+      <label class="form-label">Account ID</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="accountId"
+        placeholder="Account ID (e.g. A123)"
+      />
+    </div>
+
+    <div class="d-flex gap-2">
+      <button
+        class="btn btn-primary flex-grow-1"
+        (click)="lookup()"
+        [disabled]="loading || !isFormValid"
+      >
+        {{ loading ? 'Loading…' : 'View History' }}
+      </button>
+      <button class="btn btn-outline-secondary" (click)="reset()" [disabled]="loading">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <div *ngIf="searched && !errorMessage && events.length === 0" class="cb-card mt-3">
+    <p class="text-muted mb-0">No transactions found for this account.</p>
+  </div>
+
+  <div *ngIf="events.length > 0" class="cb-history-card">
+    <div class="cb-history-card-header">
+      <span class="cb-history-card-title">{{ accountId }} &mdash; {{ events.length }} transaction{{ events.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Date &amp; Time</th>
+            <th class="text-end">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of events" class="cb-event-row">
+            <td>
+              <span
+                class="badge"
+                [class.cb-badge-credit]="event.eventType === 'CREDITED'"
+                [class.cb-badge-debit]="event.eventType === 'DEBITED'"
+              >{{ event.eventType }}</span>
+            </td>
+            <td class="cb-date-cell">{{ formatDate(event.occurredAt) }}</td>
+            <td
+              class="text-end fw-semibold"
+              [class.cb-amount-credit]="event.eventType === 'CREDITED'"
+              [class.cb-amount-debit]="event.eventType === 'DEBITED'"
+            >
+              {{ event.eventType === 'CREDITED' ? '+' : '−' }}{{ event.amount | currency:'USD':'symbol':'1.2-2' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

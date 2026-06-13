@@ -10,6 +10,7 @@ import { TransferComponent } from './components/transfer/transfer.component';
 import { TransferReceiptComponent } from './components/transfer-receipt/transfer-receipt.component';
 import { DepositComponent } from './components/deposit/deposit.component';
 import { DepositReceiptComponent } from './components/deposit-receipt/deposit-receipt.component';
+import { HistoryComponent } from './components/history/history.component';
 
 @NgModule({
   declarations: [
@@ -19,6 +20,7 @@ import { DepositReceiptComponent } from './components/deposit-receipt/deposit-re
     TransferReceiptComponent,
     DepositComponent,
     DepositReceiptComponent,
+    HistoryComponent,
   ],
   imports: [
     BrowserModule,

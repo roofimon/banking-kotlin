@@ -1,6 +1,7 @@
 package com.bank.djackatron2.integration
 
-import com.bank.djackatron2.adapter.outbound.persistence.JdbcAccountRepository
+import com.bank.djackatron2.adapter.outbound.persistence.EventSourcedAccountRepository
+import com.bank.djackatron2.adapter.outbound.persistence.JdbcEventStore
 import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
 import com.bank.djackatron2.application.usecase.DepositMoneyUseCase
 import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
@@ -28,9 +29,11 @@ class IntegrationITCase {
     @Test
     @Throws(InsufficientFundsException::class)
     fun transferTenDollars() {
+        val jdbcTemplate = JdbcTemplate(dataSource())
+        val eventStore = JdbcEventStore(jdbcTemplate)
+        val accountRepository = EventSourcedAccountRepository(jdbcTemplate, eventStore)
         val feePolicy = ZeroFeePolicy()
-        val accountRepository = JdbcAccountRepository(JdbcTemplate(dataSource()))
-        val transferService = TransferMoneyUseCase(accountRepository, feePolicy)
+        val transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore)
 
         assertThat(accountRepository.findById("A123").getBalance(), CoreMatchers.equalTo(100.00))
         assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))
@@ -43,15 +46,34 @@ class IntegrationITCase {
 
     @Test
     fun depositTwentyDollars() {
-        val accountRepository = JdbcAccountRepository(JdbcTemplate(dataSource()))
-        val depositService = DepositMoneyUseCase(accountRepository)
+        val jdbcTemplate = JdbcTemplate(dataSource())
+        val eventStore = JdbcEventStore(jdbcTemplate)
+        val accountRepository = EventSourcedAccountRepository(jdbcTemplate, eventStore)
+        val depositService = DepositMoneyUseCase(accountRepository, eventStore)
 
         assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))
 
         depositService.deposit(20.00, "C456")
 
         assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(20.00))
+
+        val events = eventStore.eventsFor("C456")
+        assertThat(events.size, CoreMatchers.equalTo(1))
+        assertThat(events[0].amount, CoreMatchers.equalTo(20.00))
     }
 
-}
+    @Test
+    fun historyReturnsMostRecentFirst() {
+        val jdbcTemplate = JdbcTemplate(dataSource())
+        val eventStore = JdbcEventStore(jdbcTemplate)
+        val accountRepository = EventSourcedAccountRepository(jdbcTemplate, eventStore)
+        val depositService = DepositMoneyUseCase(accountRepository, eventStore)
 
+        depositService.deposit(10.00, "C456")
+        depositService.deposit(5.00, "C456")
+
+        val events = eventStore.eventsFor("C456")
+        assertThat(events.size, CoreMatchers.equalTo(2))
+        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(15.00))
+    }
+}

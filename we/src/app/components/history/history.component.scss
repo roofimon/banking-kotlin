@@ -1,0 +1,84 @@
+.cb-history-page {
+  max-width: 680px;
+}
+
+.cb-history-card {
+  background: #1E2025;
+  border: 1px solid #2C2D33;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.cb-history-card-header {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #2C2D33;
+  background: #282B30;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cb-history-card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8A919E;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cb-badge-credit {
+  background-color: rgba(5, 177, 105, 0.15) !important;
+  color: #05B169;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.25em 0.55em;
+  border-radius: 6px;
+}
+
+.cb-badge-debit {
+  background-color: rgba(223, 30, 56, 0.15) !important;
+  color: #FF6B7A;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.25em 0.55em;
+  border-radius: 6px;
+}
+
+.cb-amount-credit {
+  color: #05B169;
+}
+
+.cb-amount-debit {
+  color: #FF6B7A;
+}
+
+.cb-date-cell {
+  color: #8A919E;
+  font-size: 0.85rem;
+}
+
+.table {
+  thead th {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom-width: 1px;
+  }
+
+  tbody td {
+    padding: 0.85rem 1.25rem;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  &.table-hover tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
