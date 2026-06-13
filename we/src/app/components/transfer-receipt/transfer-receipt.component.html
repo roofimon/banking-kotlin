@@ -1,0 +1,18 @@
+<div class="card border-success shadow-sm mt-3">
+  <div class="card-header bg-success text-white fw-bold">Transfer Successful</div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-6">Transfer Amount</dt>
+      <dd class="col-sm-6">{{ receipt.transferAmount | currency:'USD' }}</dd>
+
+      <dt class="col-sm-6">Fee Charged</dt>
+      <dd class="col-sm-6">{{ receipt.feeAmount | currency:'USD' }}</dd>
+
+      <dt class="col-sm-6">Source Account ({{ receipt.finalSourceAccount.id }})</dt>
+      <dd class="col-sm-6">New balance: {{ receipt.finalSourceAccount.balance | currency:'USD' }}</dd>
+
+      <dt class="col-sm-6">Destination Account ({{ receipt.finalDestinationAccount.id }})</dt>
+      <dd class="col-sm-6">New balance: {{ receipt.finalDestinationAccount.balance | currency:'USD' }}</dd>
+    </dl>
+  </div>
+</div>

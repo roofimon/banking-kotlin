@@ -1,0 +1,47 @@
+<div class="row justify-content-center mt-4">
+  <div class="col-md-6">
+    <h2 class="mb-4">Transfer Money</h2>
+
+    <div class="card p-4 shadow-sm mb-3">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Source Account ID</label>
+        <input type="text" class="form-control" [(ngModel)]="srcId" placeholder="e.g. A123" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Amount (USD)</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="amount"
+            placeholder="0.00"
+            min="0.01"
+            step="0.01"
+          />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Destination Account ID</label>
+        <input type="text" class="form-control" [(ngModel)]="destId" placeholder="e.g. C456" />
+      </div>
+
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-success flex-grow-1"
+          (click)="submit()"
+          [disabled]="loading || !isFormValid"
+        >
+          {{ loading ? 'Transferring…' : 'Transfer' }}
+        </button>
+        <button class="btn btn-outline-secondary" (click)="reset()" [disabled]="loading">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <app-transfer-receipt *ngIf="receipt" [receipt]="receipt"></app-transfer-receipt>
+  </div>
+</div>

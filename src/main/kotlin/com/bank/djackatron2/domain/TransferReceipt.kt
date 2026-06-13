@@ -27,6 +27,7 @@ class TransferReceipt(
     }
 
     fun getTransferAmount() = transferAmount
+    fun getFeeAmount() = feeAmount
     fun getFinalSourceAccount() = finalSourceAccountCopy
     fun getFinalDestinationAccount() = finalDestinationAccountCopy
 
