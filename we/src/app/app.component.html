@@ -1,17 +1,18 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <span class="navbar-brand fw-bold">Djackatron2 Banking</span>
-    <div class="d-flex gap-3">
-      <a routerLink="/account" routerLinkActive="text-warning" class="nav-link text-white">
-        Account Lookup
+<nav class="cb-navbar">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a class="cb-navbar-brand">
+      <div class="cb-logo">₿</div>
+      Coinbase
+    </a>
+    <div class="d-flex gap-1">
+      <a routerLink="/account" routerLinkActive="active-link" class="cb-nav-link">
+        Portfolio
       </a>
-      <a routerLink="/transfer" routerLinkActive="text-warning" class="nav-link text-white">
-        Transfer Money
+      <a routerLink="/transfer" routerLinkActive="active-link" class="cb-nav-link">
+        Send
       </a>
     </div>
   </div>
 </nav>
 
-<div class="container mt-4">
-  <router-outlet></router-outlet>
-</div>
+<router-outlet></router-outlet>

@@ -1,18 +1,24 @@
-<div class="card border-success shadow-sm mt-3">
-  <div class="card-header bg-success text-white fw-bold">Transfer Successful</div>
-  <div class="card-body">
-    <dl class="row mb-0">
-      <dt class="col-sm-6">Transfer Amount</dt>
-      <dd class="col-sm-6">{{ receipt.transferAmount | currency:'USD' }}</dd>
-
-      <dt class="col-sm-6">Fee Charged</dt>
-      <dd class="col-sm-6">{{ receipt.feeAmount | currency:'USD' }}</dd>
-
-      <dt class="col-sm-6">Source Account ({{ receipt.finalSourceAccount.id }})</dt>
-      <dd class="col-sm-6">New balance: {{ receipt.finalSourceAccount.balance | currency:'USD' }}</dd>
-
-      <dt class="col-sm-6">Destination Account ({{ receipt.finalDestinationAccount.id }})</dt>
-      <dd class="col-sm-6">New balance: {{ receipt.finalDestinationAccount.balance | currency:'USD' }}</dd>
-    </dl>
+<div class="cb-receipt">
+  <div class="cb-receipt-header">
+    <div class="cb-check">✓</div>
+    Transfer Complete
+  </div>
+  <div class="cb-receipt-body">
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">Amount Sent</span>
+      <span class="cb-receipt-value">{{ receipt.transferAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">Network Fee</span>
+      <span class="cb-receipt-value">{{ receipt.feeAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">From · {{ receipt.finalSourceAccount.id }}</span>
+      <span class="cb-receipt-value">{{ receipt.finalSourceAccount.balance | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="cb-receipt-row">
+      <span class="cb-receipt-label">To · {{ receipt.finalDestinationAccount.id }}</span>
+      <span class="cb-receipt-value">{{ receipt.finalDestinationAccount.balance | currency:'USD':'symbol':'1.2-2' }}</span>
+    </div>
   </div>
 </div>

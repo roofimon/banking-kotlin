@@ -1,1 +1,347 @@
+// ─── Coinbase Design Tokens ───────────────────────────────────────────────────
+$cb-blue:           #0052FF;
+$cb-blue-hover:     #0039B3;
+$cb-blue-active:    #002EB3;
+$cb-bg:             #0A0B0D;
+$cb-surface:        #1E2025;
+$cb-surface-2:      #282B30;
+$cb-border:         #2C2D33;
+$cb-text-primary:   #FFFFFF;
+$cb-text-secondary: #8A919E;
+$cb-success:        #05B169;
+$cb-success-bg:     #0A2818;
+$cb-error:          #DF1E38;
+$cb-error-bg:       #2D0A0F;
+
+// ─── Bootstrap Variable Overrides (must come before @import) ──────────────────
+$font-family-sans-serif: 'Inter', system-ui, -apple-system, sans-serif;
+$body-bg:            $cb-bg;
+$body-color:         $cb-text-primary;
+
+$primary:            $cb-blue;
+$success:            $cb-success;
+$danger:             $cb-error;
+$secondary:          $cb-surface-2;
+
+$card-bg:            $cb-surface;
+$card-border-color:  $cb-border;
+$card-border-radius: 16px;
+$card-cap-bg:        $cb-surface-2;
+$card-cap-color:     $cb-text-primary;
+
+$input-bg:           $cb-surface-2;
+$input-border-color: $cb-border;
+$input-color:        $cb-text-primary;
+$input-placeholder-color: $cb-text-secondary;
+$input-focus-bg:     $cb-surface-2;
+$input-focus-border-color: $cb-blue;
+$input-focus-color:  $cb-text-primary;
+$input-focus-box-shadow: 0 0 0 3px rgba($cb-blue, 0.2);
+
+$input-group-addon-bg:           $cb-surface-2;
+$input-group-addon-color:        $cb-text-secondary;
+$input-group-addon-border-color: $cb-border;
+
+$table-color:        $cb-text-primary;
+$table-bg:           transparent;
+$table-border-color: $cb-border;
+$table-striped-bg:   rgba(255,255,255,.03);
+
+$navbar-dark-brand-color:        $cb-text-primary;
+$navbar-dark-color:              $cb-text-secondary;
+$navbar-dark-hover-color:        $cb-text-primary;
+$navbar-dark-active-color:       $cb-text-primary;
+
+$border-radius:    8px;
+$border-radius-lg: 12px;
+$border-radius-sm: 6px;
+
+$btn-border-radius:    8px;
+$btn-font-weight:      600;
+$btn-padding-y:        0.6rem;
+$btn-padding-x:        1.25rem;
+
+$alert-border-radius:  12px;
+
+$link-color:        $cb-blue;
+$link-hover-color:  $cb-blue-hover;
+
 @import "bootstrap/scss/bootstrap";
+
+// ─── Global ───────────────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: $cb-bg;
+  color: $cb-text-primary;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+.cb-navbar {
+  background-color: rgba($cb-bg, 0.92);
+  border-bottom: 1px solid $cb-border;
+  backdrop-filter: blur(12px);
+  padding: 0.875rem 0;
+
+  .cb-navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: $cb-text-primary;
+    text-decoration: none;
+  }
+
+  .cb-logo {
+    width: 28px;
+    height: 28px;
+    background: $cb-blue;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+    color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  .cb-nav-link {
+    color: $cb-text-secondary;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: $cb-text-primary;
+      background: rgba(255,255,255,0.06);
+    }
+
+    &.active-link {
+      color: $cb-text-primary;
+      background: rgba($cb-blue, 0.15);
+    }
+  }
+}
+
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
+.cb-page {
+  max-width: 520px;
+  margin: 2.5rem auto;
+  padding: 0 1rem;
+}
+
+.cb-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $cb-text-primary;
+  margin-bottom: 1.5rem;
+}
+
+// ─── Cards ────────────────────────────────────────────────────────────────────
+.cb-card {
+  background: $cb-surface;
+  border: 1px solid $cb-border;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.cb-card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $cb-text-secondary;
+  margin-bottom: 0.35rem;
+}
+
+// ─── Inputs ───────────────────────────────────────────────────────────────────
+.form-control, .form-select {
+  background-color: $cb-surface-2;
+  border-color: $cb-border;
+  color: $cb-text-primary;
+  border-radius: 10px;
+  padding: 0.65rem 0.875rem;
+  font-size: 0.95rem;
+
+  &::placeholder { color: $cb-text-secondary; }
+
+  &:focus {
+    background-color: $cb-surface-2;
+    border-color: $cb-blue;
+    color: $cb-text-primary;
+    box-shadow: 0 0 0 3px rgba($cb-blue, 0.2);
+  }
+}
+
+.input-group-text {
+  background-color: $cb-surface-2;
+  border-color: $cb-border;
+  color: $cb-text-secondary;
+  border-radius: 10px 0 0 10px;
+}
+
+.input-group .form-control:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.input-group .form-control:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+// ─── Buttons ──────────────────────────────────────────────────────────────────
+.btn-primary {
+  background-color: $cb-blue;
+  border-color: $cb-blue;
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled)  { background-color: $cb-blue-hover; border-color: $cb-blue-hover; }
+  &:active:not(:disabled) { background-color: $cb-blue-active; }
+  &:disabled              { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-success {
+  background-color: $cb-success;
+  border-color: $cb-success;
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled)  { background-color: darken($cb-success, 6%); border-color: darken($cb-success, 6%); }
+  &:disabled              { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-outline-secondary {
+  border-color: $cb-border;
+  color: $cb-text-secondary;
+  font-weight: 600;
+
+  &:hover:not(:disabled) { background-color: $cb-surface-2; border-color: $cb-border; color: $cb-text-primary; }
+  &:disabled { opacity: 0.4; }
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+.alert-danger {
+  background-color: $cb-error-bg;
+  border-color: rgba($cb-error, 0.4);
+  color: #FF6B7A;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+// ─── Tables ───────────────────────────────────────────────────────────────────
+.table {
+  color: $cb-text-primary;
+
+  th { color: $cb-text-secondary; font-weight: 500; font-size: 0.85rem; }
+  td { color: $cb-text-primary; font-weight: 500; }
+  thead th, td, th { border-color: $cb-border; }
+}
+
+// ─── Receipt card ─────────────────────────────────────────────────────────────
+.cb-receipt {
+  background: $cb-success-bg;
+  border: 1px solid rgba($cb-success, 0.35);
+  border-radius: 16px;
+  overflow: hidden;
+
+  .cb-receipt-header {
+    background: rgba($cb-success, 0.12);
+    border-bottom: 1px solid rgba($cb-success, 0.25);
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: $cb-success;
+    font-size: 0.95rem;
+
+    .cb-check {
+      width: 20px;
+      height: 20px;
+      background: $cb-success;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+  }
+
+  .cb-receipt-body {
+    padding: 1.25rem;
+  }
+
+  .cb-receipt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba($cb-border, 0.5);
+
+    &:last-child { border-bottom: none; }
+
+    .cb-receipt-label {
+      color: $cb-text-secondary;
+      font-size: 0.875rem;
+    }
+
+    .cb-receipt-value {
+      color: $cb-text-primary;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// ─── Account balance display ───────────────────────────────────────────────────
+.cb-balance-card {
+  background: $cb-surface;
+  border: 1px solid $cb-border;
+  border-radius: 16px;
+  padding: 1.5rem;
+
+  .cb-account-id {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $cb-text-secondary;
+    margin-bottom: 0.5rem;
+  }
+
+  .cb-balance-label {
+    font-size: 0.8rem;
+    color: $cb-text-secondary;
+    margin-bottom: 0.25rem;
+    margin-top: 1rem;
+  }
+
+  .cb-balance-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: $cb-text-primary;
+    letter-spacing: -0.5px;
+  }
+}
+
+// ─── Form label ───────────────────────────────────────────────────────────────
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $cb-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
