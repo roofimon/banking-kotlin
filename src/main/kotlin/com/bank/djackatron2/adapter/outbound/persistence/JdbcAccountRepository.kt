@@ -1,6 +1,6 @@
 package com.bank.djackatron2.adapter.outbound.persistence
 
-import com.bank.djackatron2.application.port.outbound.AccountRepositoryPort
+import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.domain.Account
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper

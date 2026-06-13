@@ -1,0 +1,79 @@
+package com.bank.djackatron2.port.inbound
+
+import com.bank.djackatron2.domain.TransferReceipt
+
+/**
+ * Primary **inbound port** of the hexagonal architecture.
+ *
+ * This interface is the sole boundary between anything that _drives_ the application
+ * (REST controllers, CLI runners, message consumers, schedulers) and the application core.
+ * Inbound adapters must depend on this interface — never on the concrete use-case class.
+ *
+ * Known inbound adapters: [com.bank.djackatron2.adapter.inbound.web.AccountController]
+ *
+ * Outbound dependencies wired into the implementation:
+ * - [com.bank.djackatron2.port.outbound.AccountRepositoryPort] — account persistence
+ * - [com.bank.djackatron2.port.outbound.FeePolicyPort] — fee calculation strategy
+ * - [com.bank.djackatron2.port.outbound.TimeServicePort] — optional service-hours guard
+ */
+interface TransferUseCase {
+
+    /**
+     * Moves [amount] from the account identified by [srcAcctId] to [dstAcctId].
+     *
+     * Execution contract (in order):
+     * 1. Validates that [amount] is ≥ the configured minimum transfer amount.
+     * 2. If a [com.bank.djackatron2.port.outbound.TimeServicePort] is wired,
+     *    checks that the transfer service is currently available.
+     * 3. Loads both accounts from the repository.
+     * 4. Calculates the fee via the fee-policy adapter and debits it from the source account
+     *    (fee-debit failure is silently swallowed — the transfer still proceeds).
+     * 5. Debits [amount] from the source account (throws on insufficient funds).
+     * 6. Credits [amount] to the destination account.
+     * 7. Persists the updated balances for both accounts.
+     * 8. Returns a [TransferReceipt] capturing initial and final states of both accounts.
+     *
+     * @param amount       The amount to transfer. Must be ≥ the configured minimum.
+     * @param srcAcctId    ID of the account to debit.
+     * @param dstAcctId    ID of the account to credit.
+     * @return             A [TransferReceipt] with the transfer amount, fee, and final balances.
+     *
+     * @throws IllegalArgumentException  if [amount] is below the minimum transfer threshold.
+     * @throws com.bank.djackatron2.application.exception.OutOfServiceException
+     *                                   if the time-service guard is active and the current
+     *                                   time falls outside the configured service window.
+     * @throws com.bank.djackatron2.domain.InsufficientFundsException
+     *                                   if the source account balance cannot cover [amount]
+     *                                   (after any fee has been attempted).
+     * @throws javax.security.auth.login.AccountNotFoundException
+     *                                   if either [srcAcctId] or [dstAcctId] does not exist.
+     */
+    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): TransferReceipt
+
+    /**
+     * Sets the lower bound for accepted transfer amounts.
+     *
+     * Any call to [transfer] with an amount strictly below [minimumTransferAmount] will throw
+     * [IllegalArgumentException] before any account or fee logic is executed.
+     *
+     * Default value used by the implementation: **1.00**.
+     *
+     * @param minimumTransferAmount  The new minimum. Must be > 0.
+     */
+    fun setMinimumTransferAmount(minimumTransferAmount: Double)
+
+    /**
+     * Wires an optional time-availability guard into the use case.
+     *
+     * When set, every call to [transfer] will first invoke
+     * [com.bank.djackatron2.port.outbound.TimeServicePort.isServiceAvailable]
+     * with the current wall-clock time. If the service is unavailable, the transfer is
+     * rejected with [com.bank.djackatron2.application.exception.OutOfServiceException].
+     *
+     * If this method is never called, the time guard is disabled and transfers are accepted
+     * at any time.
+     *
+     * @param timeService  The time-availability adapter to use.
+     */
+    fun setTimeService(timeService: com.bank.djackatron2.port.outbound.TimeServicePort)
+}

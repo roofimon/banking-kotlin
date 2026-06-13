@@ -1,6 +1,6 @@
 package com.bank.djackatron2.adapter.outbound.service
 
-import com.bank.djackatron2.application.port.outbound.FeePolicyPort
+import com.bank.djackatron2.port.outbound.FeePolicyPort
 import org.springframework.stereotype.Service
 
 @Service

@@ -1,8 +1,8 @@
-package com.bank.djackatron2.controller
+package com.bank.djackatron2.adapter.inbound.web
 
+import com.bank.djackatron2.port.inbound.TransferUseCase
+import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.domain.Account
-import com.bank.djackatron2.repository.AccountRepository
-import com.bank.djackatron2.service.TransferService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -12,9 +12,9 @@ import org.mockito.Mockito.`when`
 
 class AccountControllerTest {
 
-    private val repository: AccountRepository = mock(AccountRepository::class.java)
-    private val service: TransferService = mock(TransferService::class.java)
-    private val controller: AccountController = AccountController(repository, service)
+    private val repository: AccountRepositoryPort = mock(AccountRepositoryPort::class.java)
+    private val transferUseCase: TransferUseCase = mock(TransferUseCase::class.java)
+    private val controller: AccountController = AccountController(repository, transferUseCase)
 
     @Test
     fun testHandleById() {
@@ -41,7 +41,7 @@ class AccountControllerTest {
         controller.handleTransfer(srcId, 100.00, destId)
 
         //then
-        verify(service).transfer(100.00, srcId, destId)
+        verify(transferUseCase).transfer(100.00, srcId, destId)
     }
 
 }

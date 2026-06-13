@@ -1,7 +1,7 @@
-package com.bank.djackatron2.service.internal
+package com.bank.djackatron2.adapter.outbound.service
 
-import com.bank.djackatron2.service.OutOfServiceException
-import com.bank.djackatron2.service.TimeService
+import com.bank.djackatron2.application.exception.OutOfServiceException
+import com.bank.djackatron2.port.outbound.TimeServicePort
 import org.aopalliance.intercept.MethodInvocation
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.fail
@@ -15,7 +15,7 @@ import java.time.LocalTime
 class CheckingTimeAdviceTest {
 
     private val invocation = mock(MethodInvocation::class.java)
-    private val timeService = mock(TimeService::class.java)
+    private val timeService = mock(TimeServicePort::class.java)
 
     @Test
     fun testInvoke() {

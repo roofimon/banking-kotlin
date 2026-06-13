@@ -1,7 +1,7 @@
 package com.bank.djackatron2.adapter.outbound.service
 
 import com.bank.djackatron2.application.exception.OutOfServiceException
-import com.bank.djackatron2.application.port.outbound.TimeServicePort
+import com.bank.djackatron2.port.outbound.TimeServicePort
 import org.aopalliance.intercept.MethodInterceptor
 import org.aopalliance.intercept.MethodInvocation
 import mu.KotlinLogging

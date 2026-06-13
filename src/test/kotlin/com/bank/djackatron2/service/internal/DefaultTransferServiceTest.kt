@@ -1,19 +1,21 @@
-package com.bank.djackatron2.service.internal
+package com.bank.djackatron2.application.usecase
 
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.A123_ID
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.A123_INITIAL_BAL
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.C456_ID
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.C456_INITIAL_BAL
+import com.bank.djackatron2.adapter.outbound.persistence.SimpleAccountRepository.Companion.Z999_ID
+import com.bank.djackatron2.adapter.outbound.service.FlatFeePolicy
+import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
+import com.bank.djackatron2.application.exception.OutOfServiceException
+import com.bank.djackatron2.port.inbound.TransferUseCase
+import com.bank.djackatron2.port.outbound.AccountRepositoryPort
+import com.bank.djackatron2.port.outbound.FeePolicyPort
+import com.bank.djackatron2.port.outbound.TimeServicePort
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.InsufficientFundsException
 import com.bank.djackatron2.domain.TransferReceipt
-import com.bank.djackatron2.repository.AccountRepository
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository.Companion.A123_ID
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository.Companion.A123_INITIAL_BAL
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository.Companion.C456_ID
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository.Companion.C456_INITIAL_BAL
-import com.bank.djackatron2.repository.internal.SimpleAccountRepository.Companion.Z999_ID
-import com.bank.djackatron2.service.FeePolicy
-import com.bank.djackatron2.service.OutOfServiceException
-import com.bank.djackatron2.service.TimeService
-import com.bank.djackatron2.service.TransferService
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.BeforeAll
@@ -34,15 +36,15 @@ import kotlin.test.fail
 @TestInstance(PER_CLASS)
 class DefaultTransferServiceTest {
 
-    private lateinit var accountRepository: AccountRepository
-    private lateinit var transferService: TransferService
+    private lateinit var accountRepository: AccountRepositoryPort
+    private lateinit var transferService: TransferUseCase
 
     @BeforeEach
     fun setUp() {
         accountRepository = SimpleAccountRepository()
         val feePolicy = ZeroFeePolicy()
 
-        transferService = DefaultTransferService(accountRepository, feePolicy)
+        transferService = TransferMoneyUseCase(accountRepository, feePolicy)
 
         assertThat(accountRepository.findById(A123_ID).getBalance(), CoreMatchers.equalTo(A123_INITIAL_BAL))
         assertThat(accountRepository.findById(C456_ID).getBalance(), CoreMatchers.equalTo(C456_INITIAL_BAL))
@@ -87,14 +89,14 @@ class DefaultTransferServiceTest {
         val desAccId = "C456"
         val desAcc = Account(desAccId, 0.00)
 
-        val mockAccReop: AccountRepository = mock(AccountRepository::class.java)
+        val mockAccReop: AccountRepositoryPort = mock(AccountRepositoryPort::class.java)
         `when`(mockAccReop.findById(srcAccId)).thenReturn(srcAcc)
         `when`(mockAccReop.findById(desAccId)).thenReturn(desAcc)
 
-        val mockFeePolicy = mock(FeePolicy::class.java)
+        val mockFeePolicy = mock(FeePolicyPort::class.java)
         `when`(mockFeePolicy.calculateFee(anyDouble())).thenReturn(0.00)
 
-        val transferService: TransferService = DefaultTransferService(mockAccReop, mockFeePolicy)
+        val transferService: TransferUseCase = TransferMoneyUseCase(mockAccReop, mockFeePolicy)
 
 
         //when
@@ -111,7 +113,7 @@ class DefaultTransferServiceTest {
     fun testTransferWithCheckingTimeService() {
         //given
         val transferAmount = 100.00
-        val mockTimeService = mock(TimeService::class.java)
+        val mockTimeService = mock(TimeServicePort::class.java)
         `when`(mockTimeService.isServiceAvailable(any<LocalTime>())).thenReturn(true)
         transferService.setTimeService(mockTimeService)
 
@@ -146,7 +148,7 @@ class DefaultTransferServiceTest {
     fun testTransferWithCheckingOutofTimeService() {
         //given
         val transferAmount = 100.00
-        val mockTimeService = mock(TimeService::class.java)
+        val mockTimeService = mock(TimeServicePort::class.java)
         `when`(mockTimeService.isServiceAvailable(any<LocalTime>())).thenReturn(false)
         transferService.setTimeService(mockTimeService)
 
@@ -243,7 +245,7 @@ class DefaultTransferServiceTest {
     fun testNonZeroFeePolicy() {
         val flatFee = 5.00
         val transferAmount = 95.00
-        transferService = DefaultTransferService(accountRepository, FlatFeePolicy(flatFee))
+        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee))
         transferService.transfer(transferAmount, A123_ID, C456_ID)
         assertThat(
             accountRepository.findById(A123_ID).getBalance(),
@@ -259,7 +261,7 @@ class DefaultTransferServiceTest {
     fun testMaximumTransferWithFlatFeePolicy() {
         val flatFee = 5.00
         val transferAmout = 99.00
-        transferService = DefaultTransferService(accountRepository, FlatFeePolicy(flatFee))
+        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee))
         try {
             transferService.transfer(transferAmout, A123_ID, C456_ID)
             fail("expected InsufficientFundsException")

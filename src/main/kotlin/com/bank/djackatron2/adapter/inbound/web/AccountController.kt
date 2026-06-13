@@ -1,7 +1,7 @@
 package com.bank.djackatron2.adapter.inbound.web
 
-import com.bank.djackatron2.application.port.inbound.TransferUseCase
-import com.bank.djackatron2.application.port.outbound.AccountRepositoryPort
+import com.bank.djackatron2.port.inbound.TransferUseCase
+import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.domain.InsufficientFundsException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

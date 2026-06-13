@@ -1,8 +1,8 @@
 package com.bank.djackatron2.application.usecase
 
 import com.bank.djackatron2.application.exception.OutOfServiceException
-import com.bank.djackatron2.application.port.inbound.TransferUseCase
-import com.bank.djackatron2.application.port.outbound.*
+import com.bank.djackatron2.port.inbound.TransferUseCase
+import com.bank.djackatron2.port.outbound.*
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.InsufficientFundsException
 import com.bank.djackatron2.domain.TransferReceipt
