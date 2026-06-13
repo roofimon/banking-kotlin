@@ -1,51 +1,57 @@
 # final-tdd-using-spring
 
-A Spring Boot + Kotlin TDD demo implementing a bank money transfer service using **Hexagonal Architecture** (Ports & Adapters). The domain logic is fully isolated from infrastructure concerns, and every behaviour is driven by tests.
+A Spring Boot + Kotlin TDD demo implementing a bank account service using **Hexagonal Architecture** (Ports & Adapters) with an **event-sourced** persistence layer. The domain logic is fully isolated from infrastructure concerns, and every behaviour is driven by tests — JUnit for the backend, Playwright for the Angular web UI.
+
+Capabilities: look up a balance, transfer money (with fee policies and service-hour rules), deposit money, and view an account's transaction history.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          INBOUND                                │
-│   HTTP Client ──► AccountController  (@RestController)          │
-│                   GET /account/{id}                             │
-│                   /account/{src}/transfer/{amount}/to/{dst}     │
-└─────────────────────────┬───────────────────────────────────────┘
-                          │ TransferUseCase (inbound port)
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       APPLICATION                               │
-│   TransferMoneyUseCase (@Service)                               │
-│   ├─ validate minimum amount                                    │
-│   ├─ check service hours  ──► TimeServicePort                   │
-│   ├─ load accounts        ──► AccountRepositoryPort             │
-│   ├─ calculate fee        ──► FeePolicyPort                     │
-│   ├─ debit / credit       ──► Account  (domain)                 │
-│   └─ persist balances     ──► AccountRepositoryPort             │
-└────────────┬──────────────────┬──────────────────┬─────────────┘
-             │                  │                  │
-    AccountRepositoryPort   FeePolicyPort    TimeServicePort
-       (outbound port)      (outbound port)  (outbound port)
-             │                  │                  │
-┌────────────▼──────┐  ┌────────▼────────┐  ┌─────▼────────────┐
-│  OUTBOUND         │  │  OUTBOUND       │  │  OUTBOUND        │
-│  (Persistence)    │  │  (Fee)          │  │  (Time)          │
-│                   │  │                 │  │                  │
-│ JdbcAccountRepo   │  │ FlatFeePolicy   │  │ DefaultTime      │
-│  └─ H2 / JDBC     │  │ VariableFee     │  │  Service         │
-│                   │  │  Policy         │  │ CheckingTime     │
-│ SimpleAccountRepo │  │ ZeroFeePolicy   │  │  Advice (AOP)    │
-│  └─ in-memory     │  │                 │  │                  │
-│    (tests only)   │  │                 │  │                  │
-└───────────────────┘  └─────────────────┘  └──────────────────┘
-             │
-┌────────────▼──────────────────────────────────────────────────┐
-│  DOMAIN                                                        │
-│  Account · TransferReceipt · InsufficientFundsException        │
-└────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                            INBOUND                                 │
+│   Angular UI / HTTP ──► AccountController  (@RestController)        │
+│                         GET  /account/{id}                         │
+│                         POST /account/{src}/transfer/{amt}/to/{dst} │
+│                         POST /account/{id}/deposit/{amount}         │
+│                         GET  /account/{id}/history                  │
+│                         (TestResetController — test profiles only)  │
+└──────────────┬─────────────────────────────────┬───────────────────┘
+               │ TransferUseCase                  │ DepositUseCase
+               ▼ (inbound ports)                  ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                          APPLICATION                               │
+│   TransferMoneyUseCase / DepositMoneyUseCase  (@Service)           │
+│   ├─ validate amount / service hours ──► TimeServicePort           │
+│   ├─ load accounts                   ──► AccountRepositoryPort     │
+│   ├─ calculate fee                   ──► FeePolicyPort             │
+│   ├─ debit / credit                  ──► Account (raises events)   │
+│   └─ flush domain events             ──► EventStorePort            │
+└────────┬──────────────┬───────────────┬───────────────┬───────────┘
+         │              │               │               │
+ AccountRepositoryPort EventStorePort FeePolicyPort TimeServicePort
+         │              │               │               │
+┌────────▼──────────────▼───┐  ┌────────▼────────┐ ┌────▼──────────────┐
+│  OUTBOUND (Persistence)   │  │ OUTBOUND (Fee)  │ │ OUTBOUND (Time)   │
+│                           │  │ FlatFeePolicy   │ │ DefaultTimeService│
+│ EventSourcedAccountRepo   │  │ VariableFee     │ │ CheckingTimeAdvice│
+│  └─ balance = seed row    │  │  Policy         │ │  (AOP)            │
+│     + fold(events)        │  │ ZeroFeePolicy   │ │                   │
+│ JdbcEventStore (H2)       │  │                 │ │                   │
+│  └─ append / eventsFor    │  └─────────────────┘ └───────────────────┘
+└────────────┬──────────────┘
+┌────────────▼──────────────────────────────────────────────────────┐
+│  DOMAIN                                                            │
+│  Account (raises AccountCreditedEvent / AccountDebitedEvent)       │
+│  TransferReceipt · DepositReceipt · InsufficientFundsException     │
+│  event/ AccountEvent (sealed)                                      │
+└────────────────────────────────────────────────────────────────────┘
 ```
+
+### Event sourcing in one paragraph
+
+The `ACCOUNT` table holds a **seed balance** per account; the `ACCOUNT_EVENT` table is the append-only log. A balance is derived as `seed + fold(events)` in `EventSourcedAccountRepository`, and transaction history is just `EventStorePort.eventsFor(id)`. The `Account` aggregate is the single source of truth for events: `debit()`/`credit()` mutate the balance **and** enqueue the matching domain event, and the use cases simply flush `account.domainEvents()` to the `EventStorePort`.
 
 ---
 
@@ -53,18 +59,19 @@ A Spring Boot + Kotlin TDD demo implementing a bank money transfer service using
 
 | Package | Role |
 |---|---|
-| `domain/` | Pure business entities — no Spring, no I/O |
+| `domain/` | Pure business entities — `Account`, `TransferReceipt`, `DepositReceipt`, `InsufficientFundsException` |
+| `domain/event/` | `AccountEvent` (sealed) · `AccountCreditedEvent` · `AccountDebitedEvent` |
 | `application/exception/` | `OutOfServiceException` |
-| `application/port/inbound/` | `TransferUseCase` — driving port |
-| `application/port/outbound/` | `AccountRepositoryPort`, `FeePolicyPort`, `TimeServicePort` |
-| `application/usecase/` | `TransferMoneyUseCase` — orchestrates all ports |
-| `adapter/inbound/web/` | `AccountController` — REST adapter |
-| `adapter/outbound/persistence/` | `JdbcAccountRepository` (JDBC/H2), `SimpleAccountRepository` (in-memory) |
+| `application/usecase/` | `TransferMoneyUseCase`, `DepositMoneyUseCase` — orchestrate the ports |
+| `port/inbound/` | `TransferUseCase`, `DepositUseCase` — driving ports |
+| `port/outbound/` | `AccountRepositoryPort`, `EventStorePort`, `FeePolicyPort`, `TimeServicePort` |
+| `adapter/inbound/web/` | `AccountController`, `CorsConfig`, `TestResetController` (test-only), `dto/AccountEventDto` |
+| `adapter/outbound/persistence/` | `EventSourcedAccountRepository`, `JdbcEventStore` (H2/JDBC) |
 | `adapter/outbound/service/` | `FlatFeePolicy`, `VariableFeePolicy`, `ZeroFeePolicy`, `DefaultTimeService`, `CheckingTimeAdvice` |
 
 ---
 
-## Important Journeys
+## Important Journeys (backend tests)
 
 | Journey | Test | Key assertion |
 |---|---|---|
@@ -75,37 +82,75 @@ A Spring Boot + Kotlin TDD demo implementing a bank money transfer service using
 | Flat fee always constant | `FlatFeePolicyTest#testFlatFeePolicy` | $5.00 regardless of amount |
 | Variable fee tiers | `VariableFeePolicyTest#testVariableFeePolicy` | free / percentage / flat-rate tiers |
 | Insufficient funds | `DefaultTransferServiceTest#testInsufficientFunds` | `InsufficientFundsException` |
-| Non-existent source account | `DefaultTransferServiceTest#testNonExistentSourceAccount` | destination balance unchanged |
-| Non-existent destination account | `DefaultTransferServiceTest#testNonExistentDestinationAccount` | source balance unchanged |
-| Zero amount rejected | `DefaultTransferServiceTest#testZeroTransferAmount` | `IllegalArgumentException` |
-| Negative amount rejected | `DefaultTransferServiceTest#testNegativeTransferAmount` | `IllegalArgumentException` |
-| Sub-cent amount rejected | `DefaultTransferServiceTest#testTransferAmountLessThanOneCent` | `IllegalArgumentException` |
+| Non-existent source/destination | `DefaultTransferServiceTest#testNonExistent*Account` | the other balance unchanged |
+| Invalid amounts rejected | `DefaultTransferServiceTest#testZero/Negative/LessThanOneCent` | `IllegalArgumentException` |
 | Configurable minimum amount | `DefaultTransferServiceTest#testCustomizedMinimumTransferAmount` | runtime minimum enforced |
-| Out-of-hours rejection | `DefaultTransferServiceTest#testTransferWithCheckingOutofTimeService` | `OutOfServiceException` |
-| In-hours transfer allowed | `DefaultTransferServiceTest#testTransferWithCheckingTimeService` | transfer succeeds |
-| AOP advice blocks out-of-hours | `CheckingTimeAdviceTest#testInvokeWithTimeOutOfService` | advice throws `OutOfServiceException` |
-| AOP advice allows in-hours | `CheckingTimeAdviceTest#testInvoke` | invocation proceeds |
-| Service hours boundary | `DefaultTimeServiceTest` | 9:00 AM → available, 10:01 PM → unavailable |
+| Service-hours rules | `DefaultTransferServiceTest#testTransferWithCheckingTimeService*` | `OutOfServiceException` out of hours |
+| AOP time advice | `CheckingTimeAdviceTest` | blocks out-of-hours, allows in-hours |
+| Deposit credits account | `DepositMoneyUseCaseTest` | balance increased, credit event raised |
 | Full DB integration | `IntegrationITCase#transferTenDollars` | real H2 balances persist after transfer |
 | Spring context loads | `Djackatron2ApplicationTests#contextLoads` | all beans wired correctly |
 
 ---
 
-## Running the Tests
+## Backend
+
+### Run the tests
 
 ```bash
-./mvnw test
+mvn test
 ```
 
-## Running the Application
+### Run the application
 
 ```bash
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
-Seed data (loaded on startup via `data.sql`):
+Serves on `http://localhost:8080`. Seed data (loaded on startup via `schema.sql` + `data.sql`, H2 in-memory):
 
 | Account | Balance |
 |---|---|
 | `A123` | 100.00 |
 | `C456` | 0.00 |
+
+---
+
+## Web frontend (`we/`)
+
+An Angular 17 SPA (Bootstrap styling) consuming the REST API, with one route per journey:
+
+| Route | Screen |
+|---|---|
+| `/account` | Balance lookup |
+| `/transfer` | Send money |
+| `/deposit` | Deposit money |
+| `/history` | Transaction history |
+
+```bash
+cd we
+npm install
+npm start          # ng serve on http://localhost:4200 (calls the backend on
+                   # :8080 directly; the backend allows that origin via CORS)
+```
+
+> Requires **Node 20+** (Playwright will not run on older Node). If you use nvm: `nvm use 20`.
+
+---
+
+## End-to-end tests (Playwright)
+
+The E2E suite drives the Angular UI against the **real** Spring Boot backend. Tests are **isolated and parallel-safe**: each test seeds its own unique account via the test-only `POST /test/account/{id}/{balance}` endpoint instead of sharing global fixtures, so they run concurrently with no cross-test state.
+
+**Prerequisites:** Node 20, and the backend running on port 8080 (`mvn spring-boot:run`). Playwright starts the Angular server itself.
+
+```bash
+cd we
+npm run e2e        # headless, parallel (6 workers). Reuses a running ng serve.
+npm run e2e:ci     # hermetic: builds a static bundle and serves it (no dev-server
+                   # lazy-compile spike) — best for CI / cold runs
+npm run e2e:ui     # interactive UI mode
+npm run e2e:report # open the last HTML report
+```
+
+**Tip:** for fast repeated local runs, keep `npm start` (`ng serve`) running in another terminal — `npm run e2e` reuses it and skips the first-compile cost (~12s warm vs ~25s cold).
