@@ -11,7 +11,7 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: 1,
-  workers: 1,
+  workers: 6,
   fullyParallel: false,
   reporter: [['list'], ['html', { open: 'never' }]],
 
