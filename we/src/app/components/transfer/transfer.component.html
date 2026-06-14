@@ -43,5 +43,5 @@
 
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-  <app-transfer-receipt *ngIf="receipt" [receipt]="receipt"></app-transfer-receipt>
+  <div *ngIf="submittedMessage" class="cb-submitted alert alert-success">{{ submittedMessage }}</div>
 </div>

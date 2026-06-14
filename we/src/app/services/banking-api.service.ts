@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Account } from '../models/account.model';
-import { TransferReceipt } from '../models/transfer-receipt.model';
+import { TransferAccepted } from '../models/transfer-accepted.model';
 import { DepositReceipt } from '../models/deposit-receipt.model';
 import { AccountEvent } from '../models/account-event.model';
 import { environment } from '../../environments/environment';
@@ -20,9 +20,9 @@ export class BankingApiService {
       .pipe(catchError(this.handleError));
   }
 
-  transfer(srcId: string, amount: number, destId: string): Observable<TransferReceipt> {
+  transfer(srcId: string, amount: number, destId: string): Observable<TransferAccepted> {
     return this.http
-      .post<TransferReceipt>(
+      .post<TransferAccepted>(
         `${this.baseUrl}/account/${srcId}/transfer/${amount}/to/${destId}`,
         null
       )

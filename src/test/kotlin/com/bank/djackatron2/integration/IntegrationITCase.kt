@@ -8,6 +8,7 @@ import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
@@ -31,7 +32,7 @@ class IntegrationITCase {
         val eventStore = JdbcEventStore(jdbcTemplate)
         val accountRepository = EventSourcedAccountRepository(jdbcTemplate, eventStore)
         val feePolicy = ZeroFeePolicy()
-        val transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore)
+        val transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore, ApplicationEventPublisher { })
 
         assertThat(accountRepository.findById("A123").getOrNull()!!.getBalance(), CoreMatchers.equalTo(100.00))
         assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(0.00))

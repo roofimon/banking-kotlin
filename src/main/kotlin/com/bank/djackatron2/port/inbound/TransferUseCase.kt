@@ -33,13 +33,14 @@ interface TransferUseCase {
      * 5. Debits [amount] from the source account (fails with [DomainError.InsufficientFunds]).
      * 6. Credits [amount] to the destination account.
      * 7. Persists the updated balances for both accounts.
-     * 8. Returns a [TransferReceipt] capturing initial and final states of both accounts.
+     * 8. Publishes a `TransferCompletedEvent` (carrying the [TransferReceipt]) to the internal bus;
+     *    a worker delivers the receipt out-of-band. The receipt is **not** returned to the caller.
      *
      * @param amount       The amount to transfer. Must be ≥ the configured minimum.
      * @param srcAcctId    ID of the account to debit.
      * @param dstAcctId    ID of the account to credit.
-     * @return             [Either.Right] with a [TransferReceipt] (transfer amount, fee, and final
-     *                     balances) on success, or [Either.Left] with a [DomainError]:
+     * @return             [Either.Right] with [Unit] once the transfer is applied and the
+     *                     `TransferCompletedEvent` is published, or [Either.Left] with a [DomainError]:
      *                     - [DomainError.BelowMinimum]     if [amount] is below the minimum threshold.
      *                     - [DomainError.OutOfService]     if the time-service guard is active and the
      *                       current time falls outside the configured service window.
@@ -47,7 +48,7 @@ interface TransferUseCase {
      *                     - [DomainError.InsufficientFunds] if the source balance cannot cover [amount]
      *                       (after any fee has been attempted).
      */
-    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, TransferReceipt>
+    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, Unit>
 
     /**
      * Sets the lower bound for accepted transfer amounts.

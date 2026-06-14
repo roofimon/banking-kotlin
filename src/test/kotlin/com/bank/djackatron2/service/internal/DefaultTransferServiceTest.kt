@@ -10,6 +10,7 @@ import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventSourcedAcc
 import com.bank.djackatron2.adapter.outbound.persistence.InMemoryEventStore
 import com.bank.djackatron2.adapter.outbound.service.FlatFeePolicy
 import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
+import com.bank.djackatron2.application.event.TransferCompletedEvent
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.TransferReceipt
@@ -29,6 +30,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalTime
 
 @TestInstance(PER_CLASS)
@@ -38,6 +40,13 @@ class DefaultTransferServiceTest {
     private lateinit var accountRepository: AccountRepositoryPort
     private lateinit var transferService: TransferUseCase
 
+    // Capturing publisher: the receipt is no longer returned, it is published to the bus.
+    private lateinit var publishedEvents: MutableList<Any>
+    private lateinit var eventPublisher: ApplicationEventPublisher
+
+    private fun lastReceipt(): TransferReceipt =
+        (publishedEvents.last() as TransferCompletedEvent).receipt
+
     @BeforeEach
     fun setUp() {
         eventStore = InMemoryEventStore()
@@ -45,8 +54,10 @@ class DefaultTransferServiceTest {
             mapOf(A123_ID to A123_INITIAL_BAL, C456_ID to C456_INITIAL_BAL),
             eventStore
         )
+        publishedEvents = mutableListOf()
+        eventPublisher = ApplicationEventPublisher { event -> publishedEvents.add(event) }
         val feePolicy = ZeroFeePolicy()
-        transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore)
+        transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore, eventPublisher)
 
         assertThat(accountRepository.findById(A123_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(A123_INITIAL_BAL))
         assertThat(accountRepository.findById(C456_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(C456_INITIAL_BAL))
@@ -56,8 +67,10 @@ class DefaultTransferServiceTest {
     fun testTransfer() {
         val transferAmount = 100.00
 
-        val receipt = transferService.transfer(transferAmount, A123_ID, C456_ID).getOrNull()!!
+        val result = transferService.transfer(transferAmount, A123_ID, C456_ID)
+        assertThat(result.isRight(), CoreMatchers.equalTo(true))
 
+        val receipt = lastReceipt()
         assertThat(receipt.getTransferAmount(), CoreMatchers.equalTo(transferAmount))
         assertThat(
             receipt.getFinalSourceAccount().getBalance(),
@@ -94,10 +107,14 @@ class DefaultTransferServiceTest {
         `when`(mockFeePolicy.calculateFee(anyDouble())).thenReturn(0.00)
 
         val mockEventStore: EventStorePort = mock(EventStorePort::class.java)
-        val transferService: TransferUseCase = TransferMoneyUseCase(mockAccRepo, mockFeePolicy, mockEventStore)
+        val captured = mutableListOf<Any>()
+        val publisher = ApplicationEventPublisher { event -> captured.add(event) }
+        val transferService: TransferUseCase = TransferMoneyUseCase(mockAccRepo, mockFeePolicy, mockEventStore, publisher)
 
-        val receipt = transferService.transfer(transferAmount, srcAccId, desAccId).getOrNull()!!
+        val result = transferService.transfer(transferAmount, srcAccId, desAccId)
+        assertThat(result.isRight(), CoreMatchers.equalTo(true))
 
+        val receipt = (captured.last() as TransferCompletedEvent).receipt
         assertThat(receipt.getTransferAmount(), CoreMatchers.equalTo(transferAmount))
         assertThat(receipt.getFinalSourceAccount().getBalance(), CoreMatchers.equalTo(0.00))
         assertThat(receipt.getFinalDestinationAccount().getBalance(), CoreMatchers.equalTo(100.00))
@@ -110,8 +127,10 @@ class DefaultTransferServiceTest {
         `when`(mockTimeService.isServiceAvailable(any<LocalTime>())).thenReturn(true)
         transferService.setTimeService(mockTimeService)
 
-        val receipt: TransferReceipt = transferService.transfer(transferAmount, A123_ID, C456_ID).getOrNull()!!
+        val result = transferService.transfer(transferAmount, A123_ID, C456_ID)
+        assertThat(result.isRight(), CoreMatchers.equalTo(true))
 
+        val receipt = lastReceipt()
         assertThat(receipt.getTransferAmount(), CoreMatchers.equalTo(transferAmount))
         assertThat(
             receipt.getFinalSourceAccount().getBalance(),
@@ -207,7 +226,7 @@ class DefaultTransferServiceTest {
     fun testNonZeroFeePolicy() {
         val flatFee = 5.00
         val transferAmount = 95.00
-        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore)
+        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore, eventPublisher)
         transferService.transfer(transferAmount, A123_ID, C456_ID)
         assertThat(
             accountRepository.findById(A123_ID).getOrNull()!!.getBalance(),
@@ -223,7 +242,7 @@ class DefaultTransferServiceTest {
     fun testMaximumTransferWithFlatFeePolicy() {
         val flatFee = 5.00
         val transferAmount = 99.00
-        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore)
+        transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore, eventPublisher)
 
         val error = transferService.transfer(transferAmount, A123_ID, C456_ID).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.InsufficientFunds::class.java))

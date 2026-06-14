@@ -1,6 +1,7 @@
 package com.bank.djackatron2.adapter.inbound.web
 
 import com.bank.djackatron2.adapter.inbound.web.dto.AccountEventDto
+import com.bank.djackatron2.adapter.inbound.web.dto.TransferAcceptedResponse
 import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.event.AccountCreditedEvent
 import com.bank.djackatron2.port.inbound.DepositUseCase
@@ -36,7 +37,10 @@ class AccountController(
         @PathVariable("amount") amount: Double,
         @PathVariable("destId") destId: String
     ): ResponseEntity<*> =
-        transferUseCase.transfer(amount, srcId, destId).fold({ it.toResponse() }, { ResponseEntity.ok(it) })
+        transferUseCase.transfer(amount, srcId, destId).fold(
+            { it.toResponse() },
+            { ResponseEntity.accepted().body(TransferAcceptedResponse("Transfer submitted; your receipt is being sent.")) },
+        )
 
     @PostMapping("/{id}/deposit/{amount}")
     fun handleDeposit(

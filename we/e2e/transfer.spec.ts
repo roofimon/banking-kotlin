@@ -23,28 +23,14 @@ test.describe('Transfer Money', () => {
     await expect(transferPage.sendButton).toBeDisabled();
   });
 
-  test('happy path — transfer $50 shows receipt', async () => {
+  test('happy path — transfer is accepted (receipt sent out-of-band)', async () => {
     await transferPage.fillAndSubmit(richId, 50, emptyId);
 
-    await expect(transferPage.receipt).toBeVisible();
-    await expect(transferPage.receiptHeader).toContainText('Transfer Complete');
-
-    // Row 0: Amount Sent
-    await expect(transferPage.receiptRowAt(0)).toContainText('$50.00');
-    // Row 1: Network Fee ($5 flat fee)
-    await expect(transferPage.receiptRowAt(1)).toContainText('$5.00');
-    // Row 2: Source balance after transfer (100 - 5 fee - 50 = 45)
-    await expect(transferPage.receiptRowAt(2)).toContainText('$45.00');
-    // Row 3: Destination balance after transfer (0 + 50 = 50)
-    await expect(transferPage.receiptRowAt(3)).toContainText('$50.00');
-  });
-
-  test('receipt shows correct account IDs', async () => {
-    await transferPage.fillAndSubmit(richId, 50, emptyId);
-
-    await expect(transferPage.receipt).toBeVisible();
-    await expect(transferPage.receiptRowAt(2)).toContainText(richId);
-    await expect(transferPage.receiptRowAt(3)).toContainText(emptyId);
+    // Transfer is now async: the endpoint returns 202 and the receipt is dispatched by a
+    // worker, so the UI shows a submitted confirmation rather than the receipt.
+    await expect(transferPage.submittedBanner).toBeVisible();
+    await expect(transferPage.submittedBanner).toContainText('submitted');
+    await expect(transferPage.receipt).not.toBeVisible();
   });
 
   test('insufficient funds shows error alert', async () => {
@@ -52,23 +38,23 @@ test.describe('Transfer Money', () => {
     await transferPage.fillAndSubmit(emptyId, 200, richId);
 
     await expect(transferPage.errorAlert).toBeVisible();
-    await expect(transferPage.receipt).not.toBeVisible();
+    await expect(transferPage.submittedBanner).not.toBeVisible();
   });
 
   test('amount below minimum shows error alert', async () => {
     await transferPage.fillAndSubmit(richId, 0.001, emptyId);
 
     await expect(transferPage.errorAlert).toBeVisible();
-    await expect(transferPage.receipt).not.toBeVisible();
+    await expect(transferPage.submittedBanner).not.toBeVisible();
   });
 
-  test('Clear button resets the form and hides receipt', async () => {
+  test('Clear button resets the form and hides confirmation', async () => {
     await transferPage.fillAndSubmit(richId, 50, emptyId);
-    await expect(transferPage.receipt).toBeVisible();
+    await expect(transferPage.submittedBanner).toBeVisible();
 
     await transferPage.clearButton.click();
 
-    await expect(transferPage.receipt).not.toBeVisible();
+    await expect(transferPage.submittedBanner).not.toBeVisible();
     await expect(transferPage.fromInput).toHaveValue('');
     await expect(transferPage.amountInput).toHaveValue('');
     await expect(transferPage.toInput).toHaveValue('');

@@ -9,7 +9,6 @@ import com.bank.djackatron2.adapter.inbound.web.dto.ErrorResponse
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DepositReceipt
 import com.bank.djackatron2.domain.DomainError
-import com.bank.djackatron2.domain.TransferReceipt
 import com.bank.djackatron2.domain.event.AccountCreditedEvent
 import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.inbound.TransferUseCase
@@ -59,12 +58,11 @@ class AccountControllerTest {
     fun testHandleTransfer() {
         val srcId = "A123"
         val destId = "B123"
-        val receipt = TransferReceipt(Account(srcId, 100.00), Account(destId, 0.00))
-        `when`(transferUseCase.transfer(100.00, srcId, destId)).thenReturn(receipt.right())
+        `when`(transferUseCase.transfer(100.00, srcId, destId)).thenReturn(Unit.right())
 
         val result = controller.handleTransfer(srcId, 100.00, destId)
 
-        assertEquals(HttpStatus.OK, result.statusCode)
+        assertEquals(HttpStatus.ACCEPTED, result.statusCode)
         verify(transferUseCase).transfer(100.00, srcId, destId)
     }
 
