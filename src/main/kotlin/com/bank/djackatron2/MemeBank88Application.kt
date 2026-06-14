@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class Djackatron2Application
+class MemeBank88Application
 
 fun main(args: Array<String>) {
-	runApplication<Djackatron2Application>(*args)
+	runApplication<MemeBank88Application>(*args)
 }

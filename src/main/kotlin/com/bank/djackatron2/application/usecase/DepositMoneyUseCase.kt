@@ -1,7 +1,11 @@
 package com.bank.djackatron2.application.usecase
 
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DepositReceipt
+import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
@@ -15,20 +19,22 @@ class DepositMoneyUseCase(
 
     private var minimumDepositAmount = 0.01
 
-    override fun deposit(amount: Double, accountId: String): DepositReceipt {
-        if (amount < minimumDepositAmount) {
-            throw IllegalArgumentException("deposit amount must be at least $minimumDepositAmount")
+    override fun deposit(amount: Double, accountId: String): Either<DomainError, DepositReceipt> = either {
+        ensure(amount >= minimumDepositAmount) {
+            DomainError.BelowMinimum(amount, minimumDepositAmount, "deposit")
         }
 
         val account = accountRepository.findById(accountId)
+            .toEither { DomainError.AccountNotFound(accountId) }
+            .bind()
         val initial = Account.copy(account)
 
-        account.credit(amount)
+        account.credit(amount).bind()
 
         account.domainEvents().forEach { eventStore.append(it) }
         account.clearDomainEvents()
 
-        return DepositReceipt(amount, initial, Account.copy(account))
+        DepositReceipt(amount, initial, Account.copy(account))
     }
 
     override fun setMinimumDepositAmount(minimumDepositAmount: Double) {

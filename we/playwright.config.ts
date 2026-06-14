@@ -60,7 +60,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          executablePath: '/usr/bin/chromium-browser',
+          executablePath: process.env.PW_CHROMIUM_PATH || '/usr/bin/chromium-browser',
         },
       },
     },

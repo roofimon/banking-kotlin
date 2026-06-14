@@ -41,48 +41,37 @@ export class BankingApiService {
         `${this.baseUrl}/account/${accountId}/deposit/${amount}`,
         null
       )
-      .pipe(catchError(this.handleDepositError));
+      .pipe(catchError(this.handleError));
   }
 
-  private handleDepositError(error: HttpErrorResponse): Observable<never> {
+  // Arrow-function property: it is passed by reference to catchError, so it must not rely on
+  // a bound `this`. It classifies failures by the backend's machine-readable `code` field
+  // (see the Kotlin ErrorResponse / DomainError.toResponse mapping).
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     let message = 'An unexpected error occurred.';
     if (error.status === 0) {
       message = 'Cannot reach the server. Is the backend running on port 8080?';
-    } else if (error.status === 404) {
-      message = 'Account not found.';
-    } else if (error.status === 400) {
-      message = 'Invalid request: ' + (error.error?.message ?? 'bad input');
-    } else if (error.status === 500) {
-      const msg: string = error.error?.message ?? '';
-      if (msg.toLowerCase().includes('minimum')) {
-        message = 'Deposit amount is below the minimum allowed.';
-      } else {
-        message = 'Server error: ' + (msg || 'internal error');
+    } else {
+      switch (error.error?.code) {
+        case 'ACCOUNT_NOT_FOUND':
+          message = 'Account not found.';
+          break;
+        case 'INSUFFICIENT_FUNDS':
+          message = 'Insufficient funds in the source account.';
+          break;
+        case 'OUT_OF_SERVICE':
+          message = 'Transfer service is currently out of service hours.';
+          break;
+        case 'BELOW_MINIMUM':
+          message = error.error?.message ?? 'Amount is below the minimum allowed.';
+          break;
+        case 'INVALID_AMOUNT':
+          message = 'Amount must be greater than zero.';
+          break;
+        default:
+          message = error.error?.message ? `Server error: ${error.error.message}` : message;
       }
     }
     return throwError(() => new Error(message));
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let message = 'An unexpected error occurred.';
-    if (error.status === 0) {
-      message = 'Cannot reach the server. Is the backend running on port 8080?';
-    } else if (error.status === 404) {
-      message = 'Account not found.';
-    } else if (error.status === 400) {
-      message = 'Invalid request: ' + (error.error?.message ?? 'bad input');
-    } else if (error.status === 500) {
-      const msg: string = error.error?.message ?? '';
-      if (msg.toLowerCase().includes('insufficient')) {
-        message = 'Insufficient funds in the source account.';
-      } else if (msg.toLowerCase().includes('service')) {
-        message = 'Transfer service is currently out of service hours.';
-      } else if (msg.toLowerCase().includes('minimum')) {
-        message = 'Transfer amount is below the minimum allowed.';
-      } else {
-        message = 'Server error: ' + (msg || 'internal error');
-      }
-    }
-    return throwError(() => new Error(message));
-  }
+  };
 }

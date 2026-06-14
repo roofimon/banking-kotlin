@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.bank</groupId>
-	<artifactId>djackatron2</artifactId>
+	<artifactId>memebank88</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>djackatron2 </name>
 	<description>Demo project for Spring Boot</description>
@@ -50,6 +50,13 @@
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib</artifactId>
+		</dependency>
+
+		<!-- Arrow-kt: Option / Either for functional error handling -->
+		<dependency>
+			<groupId>io.arrow-kt</groupId>
+			<artifactId>arrow-core</artifactId>
+			<version>1.2.4</version>
 		</dependency>
 
 		<dependency>

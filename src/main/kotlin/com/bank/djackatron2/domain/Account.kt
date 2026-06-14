@@ -1,5 +1,8 @@
 package com.bank.djackatron2.domain
 
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.bank.djackatron2.domain.event.AccountCreditedEvent
 import com.bank.djackatron2.domain.event.AccountDebitedEvent
 import com.bank.djackatron2.domain.event.AccountEvent
@@ -28,18 +31,16 @@ data class Account(
         this.balance = balance
     }
 
-    fun debit(amount: Double) {
-        assertValid(amount)
-        if (amount > balance) throw InsufficientFundsException(this, amount)
+    fun debit(amount: Double): Either<DomainError, Unit> = either {
+        ensure(amount > 0.00) { DomainError.InvalidAmount(amount) }
+        ensure(amount <= balance) { DomainError.InsufficientFunds(id, amount, balance) }
         balance -= amount
         _domainEvents.add(AccountDebitedEvent(id, amount, Instant.now()))
     }
 
-    fun credit(amount: Double) {
-        assertValid(amount)
+    fun credit(amount: Double): Either<DomainError, Unit> = either {
+        ensure(amount > 0.00) { DomainError.InvalidAmount(amount) }
         balance += amount
         _domainEvents.add(AccountCreditedEvent(id, amount, Instant.now()))
     }
-
-    private fun assertValid(amount: Double) = require((amount > 0.00)) { "amount must be greater than zero" }
 }

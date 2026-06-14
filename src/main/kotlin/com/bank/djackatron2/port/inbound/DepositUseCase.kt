@@ -1,6 +1,8 @@
 package com.bank.djackatron2.port.inbound
 
+import arrow.core.Either
 import com.bank.djackatron2.domain.DepositReceipt
+import com.bank.djackatron2.domain.DomainError
 
 /**
  * Primary **inbound port** for the deposit operation.
@@ -19,12 +21,11 @@ interface DepositUseCase {
      *
      * @param amount     The amount to deposit. Must be ≥ the configured minimum (default 0.01).
      * @param accountId  ID of the account to credit.
-     * @return           A [DepositReceipt] with the deposit amount and final balance.
-     *
-     * @throws IllegalArgumentException                          if [amount] is below the minimum.
-     * @throws javax.security.auth.login.AccountNotFoundException if [accountId] does not exist.
+     * @return           [Either.Right] with a [DepositReceipt] on success, or [Either.Left] with a
+     *                   [DomainError]: [DomainError.BelowMinimum] if [amount] is below the minimum,
+     *                   or [DomainError.AccountNotFound] if [accountId] does not exist.
      */
-    fun deposit(amount: Double, accountId: String): DepositReceipt
+    fun deposit(amount: Double, accountId: String): Either<DomainError, DepositReceipt>
 
     /**
      * Sets the lower bound for accepted deposit amounts. Default: **0.01**.

@@ -1,7 +1,9 @@
 package com.bank.djackatron2.application.usecase
 
-import com.bank.djackatron2.application.exception.OutOfServiceException
-import com.bank.djackatron2.domain.InsufficientFundsException
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.TransferReceipt
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
@@ -21,17 +23,17 @@ class TransferMoneyUseCase(
     private var minimumTransferAmount = 1.00
     private var timeService: TimeServicePort? = null
 
-    override fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): TransferReceipt {
-        if (amount < minimumTransferAmount) {
-            throw IllegalArgumentException("transfer amount must be at least $minimumTransferAmount")
+    override fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, TransferReceipt> = either {
+        ensure(amount >= minimumTransferAmount) {
+            DomainError.BelowMinimum(amount, minimumTransferAmount, "transfer")
         }
 
-        if (timeService != null && !timeService!!.isServiceAvailable(LocalTime.now())) {
-            throw OutOfServiceException()
-        }
+        ensure(timeService?.isServiceAvailable(LocalTime.now()) != false) { DomainError.OutOfService }
 
         val srcAcct = accountRepository.findById(srcAcctId)
+            .toEither { DomainError.AccountNotFound(srcAcctId) }.bind()
         val dstAcct = accountRepository.findById(dstAcctId)
+            .toEither { DomainError.AccountNotFound(dstAcctId) }.bind()
 
         val receipt = TransferReceipt(
             initialSourceAccountCopy = srcAcct,
@@ -39,24 +41,14 @@ class TransferMoneyUseCase(
         )
 
         val fee = feePolicy.calculateFee(amount)
-        if (fee > 0) {
-            try {
-                srcAcct.debit(fee)
-            } catch (e: InsufficientFundsException) {
-                e.printStackTrace()
-            }
-        }
+        // Fee-debit failure is intentionally ignored — the transfer still proceeds.
+        if (fee > 0) srcAcct.debit(fee)
 
         receipt.setTransferAmount(amount)
         receipt.setFeeAmount(fee)
 
-        try {
-            srcAcct.debit(amount)
-        } catch (e: InsufficientFundsException) {
-            throw InsufficientFundsException(srcAcct, amount)
-        }
-
-        dstAcct.credit(amount)
+        srcAcct.debit(amount).bind()
+        dstAcct.credit(amount).bind()
 
         receipt.setFinalSourceAccount(srcAcct)
         receipt.setFinalDestinationAccount(dstAcct)
@@ -65,7 +57,7 @@ class TransferMoneyUseCase(
         srcAcct.clearDomainEvents()
         dstAcct.clearDomainEvents()
 
-        return receipt
+        receipt
     }
 
     override fun setMinimumTransferAmount(minimumTransferAmount: Double) {

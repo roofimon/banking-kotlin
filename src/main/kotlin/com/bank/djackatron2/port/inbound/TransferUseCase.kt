@@ -1,5 +1,7 @@
 package com.bank.djackatron2.port.inbound
 
+import arrow.core.Either
+import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.TransferReceipt
 
 /**
@@ -28,7 +30,7 @@ interface TransferUseCase {
      * 3. Loads both accounts from the repository.
      * 4. Calculates the fee via the fee-policy adapter and debits it from the source account
      *    (fee-debit failure is silently swallowed — the transfer still proceeds).
-     * 5. Debits [amount] from the source account (throws on insufficient funds).
+     * 5. Debits [amount] from the source account (fails with [DomainError.InsufficientFunds]).
      * 6. Credits [amount] to the destination account.
      * 7. Persists the updated balances for both accounts.
      * 8. Returns a [TransferReceipt] capturing initial and final states of both accounts.
@@ -36,25 +38,22 @@ interface TransferUseCase {
      * @param amount       The amount to transfer. Must be ≥ the configured minimum.
      * @param srcAcctId    ID of the account to debit.
      * @param dstAcctId    ID of the account to credit.
-     * @return             A [TransferReceipt] with the transfer amount, fee, and final balances.
-     *
-     * @throws IllegalArgumentException  if [amount] is below the minimum transfer threshold.
-     * @throws com.bank.djackatron2.application.exception.OutOfServiceException
-     *                                   if the time-service guard is active and the current
-     *                                   time falls outside the configured service window.
-     * @throws com.bank.djackatron2.domain.InsufficientFundsException
-     *                                   if the source account balance cannot cover [amount]
-     *                                   (after any fee has been attempted).
-     * @throws javax.security.auth.login.AccountNotFoundException
-     *                                   if either [srcAcctId] or [dstAcctId] does not exist.
+     * @return             [Either.Right] with a [TransferReceipt] (transfer amount, fee, and final
+     *                     balances) on success, or [Either.Left] with a [DomainError]:
+     *                     - [DomainError.BelowMinimum]     if [amount] is below the minimum threshold.
+     *                     - [DomainError.OutOfService]     if the time-service guard is active and the
+     *                       current time falls outside the configured service window.
+     *                     - [DomainError.AccountNotFound]  if either [srcAcctId] or [dstAcctId] is unknown.
+     *                     - [DomainError.InsufficientFunds] if the source balance cannot cover [amount]
+     *                       (after any fee has been attempted).
      */
-    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): TransferReceipt
+    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, TransferReceipt>
 
     /**
      * Sets the lower bound for accepted transfer amounts.
      *
-     * Any call to [transfer] with an amount strictly below [minimumTransferAmount] will throw
-     * [IllegalArgumentException] before any account or fee logic is executed.
+     * Any call to [transfer] with an amount strictly below [minimumTransferAmount] returns
+     * [Either.Left] with [DomainError.BelowMinimum] before any account or fee logic is executed.
      *
      * Default value used by the implementation: **1.00**.
      *
@@ -68,7 +67,7 @@ interface TransferUseCase {
      * When set, every call to [transfer] will first invoke
      * [com.bank.djackatron2.port.outbound.TimeServicePort.isServiceAvailable]
      * with the current wall-clock time. If the service is unavailable, the transfer is
-     * rejected with [com.bank.djackatron2.application.exception.OutOfServiceException].
+     * rejected with [Either.Left] carrying [DomainError.OutOfService].
      *
      * If this method is never called, the time guard is disabled and transfers are accepted
      * at any time.

@@ -5,7 +5,6 @@ import com.bank.djackatron2.adapter.outbound.persistence.JdbcEventStore
 import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
 import com.bank.djackatron2.application.usecase.DepositMoneyUseCase
 import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
-import com.bank.djackatron2.domain.InsufficientFundsException
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
@@ -27,7 +26,6 @@ class IntegrationITCase {
     }
 
     @Test
-    @Throws(InsufficientFundsException::class)
     fun transferTenDollars() {
         val jdbcTemplate = JdbcTemplate(dataSource())
         val eventStore = JdbcEventStore(jdbcTemplate)
@@ -35,13 +33,13 @@ class IntegrationITCase {
         val feePolicy = ZeroFeePolicy()
         val transferService = TransferMoneyUseCase(accountRepository, feePolicy, eventStore)
 
-        assertThat(accountRepository.findById("A123").getBalance(), CoreMatchers.equalTo(100.00))
-        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))
+        assertThat(accountRepository.findById("A123").getOrNull()!!.getBalance(), CoreMatchers.equalTo(100.00))
+        assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(0.00))
 
         transferService.transfer(10.00, "A123", "C456")
 
-        assertThat(accountRepository.findById("A123").getBalance(), CoreMatchers.equalTo(90.00))
-        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(10.00))
+        assertThat(accountRepository.findById("A123").getOrNull()!!.getBalance(), CoreMatchers.equalTo(90.00))
+        assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(10.00))
     }
 
     @Test
@@ -51,11 +49,11 @@ class IntegrationITCase {
         val accountRepository = EventSourcedAccountRepository(jdbcTemplate, eventStore)
         val depositService = DepositMoneyUseCase(accountRepository, eventStore)
 
-        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(0.00))
+        assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(0.00))
 
         depositService.deposit(20.00, "C456")
 
-        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(20.00))
+        assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(20.00))
 
         val events = eventStore.eventsFor("C456")
         assertThat(events.size, CoreMatchers.equalTo(1))
@@ -74,6 +72,6 @@ class IntegrationITCase {
 
         val events = eventStore.eventsFor("C456")
         assertThat(events.size, CoreMatchers.equalTo(2))
-        assertThat(accountRepository.findById("C456").getBalance(), CoreMatchers.equalTo(15.00))
+        assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(15.00))
     }
 }

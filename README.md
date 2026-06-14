@@ -144,6 +144,36 @@ The E2E suite drives the Angular UI against the **real** Spring Boot backend. Te
 
 **Prerequisites:** Node 20, and the backend running on port 8080 (`mvn spring-boot:run`). Playwright starts the Angular server itself.
 
+### Prepare the environment
+
+```bash
+cd we
+npm install                       # install web + Playwright dependencies
+npx playwright install chromium   # download the Chromium browser binary
+```
+
+The Playwright config (`we/playwright.config.ts`) launches a Chromium at
+`/usr/bin/chromium-browser` by default — the distro package used in CI. On
+machines without that path (e.g. macOS, or when using the browser downloaded
+above), point it at your binary with `PW_CHROMIUM_PATH`:
+
+```bash
+# macOS, using the browser from `npx playwright install chromium`:
+export PW_CHROMIUM_PATH="$(find ~/Library/Caches/ms-playwright -name 'Google Chrome for Testing' -type f | head -1)"
+```
+
+An `export` only applies to the shell that ran it, so add the line above to your
+`~/.zshrc` (or `~/.bashrc`) to set it permanently — otherwise every new terminal
+falls back to `/usr/bin/chromium-browser`.
+
+Start the backend in a separate terminal before running the suite:
+
+```bash
+mvn spring-boot:run               # from the repo root; serves on :8080
+```
+
+### Run the tests
+
 ```bash
 cd we
 npm run e2e        # headless, parallel (6 workers). Reuses a running ng serve.
@@ -154,3 +184,12 @@ npm run e2e:report # open the last HTML report
 ```
 
 **Tip:** for fast repeated local runs, keep `npm start` (`ng serve`) running in another terminal — `npm run e2e` reuses it and skips the first-compile cost (~12s warm vs ~25s cold).
+
+### Troubleshooting
+
+**`browserType.launch: Failed to launch chromium because executable doesn't exist at /usr/bin/chromium-browser`**
+
+`PW_CHROMIUM_PATH` is not set in your shell, so Playwright fell back to the CI
+default path, which doesn't exist on macOS. Set the variable (see *Prepare the
+environment* above) and re-run. If the binary itself is missing, run
+`npx playwright install chromium` first.

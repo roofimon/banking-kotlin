@@ -20,7 +20,26 @@ Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.
 
 ## Running end-to-end tests
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+E2E tests run with [Playwright](https://playwright.dev) against the real Spring Boot
+backend. First-time setup:
+
+```bash
+npm install
+npx playwright install chromium   # download the Chromium browser binary
+```
+
+The config (`playwright.config.ts`) launches Chromium from `/usr/bin/chromium-browser`
+by default (the CI path). On macOS, or to use the browser installed above, set
+`PW_CHROMIUM_PATH` to your binary:
+
+```bash
+export PW_CHROMIUM_PATH="$(find ~/Library/Caches/ms-playwright -name 'Google Chrome for Testing' -type f | head -1)"
+```
+
+With the backend running on port 8080 (`mvn spring-boot:run` from the repo root),
+run `npm run e2e`. Playwright starts the Angular dev server itself. See the
+[root README](../README.md#end-to-end-tests-playwright) for the full workflow and
+the other `e2e:*` scripts.
 
 ## Further help
 
