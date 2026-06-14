@@ -93,9 +93,33 @@ A Spring Boot + Kotlin TDD demo implementing a bank money transfer service using
 
 ## Running the Tests
 
+Unit and integration tests (JVM):
+
 ```bash
 ./mvnw test
 ```
+
+### End-to-End Tests (Playwright)
+
+The E2E suite drives the Angular web app in `we/` against a live backend.
+
+1. Start the backend (port 8080):
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+2. In a second terminal, run the suite from `we/` (Playwright starts the
+   Angular dev server on port 4200 automatically):
+
+   ```bash
+   cd we
+   npm run e2e
+   ```
+
+Tests run across **6 parallel workers** (configured in
+`we/playwright.config.ts`). Requires Node 18+; browsers are installed with
+`npx playwright install`.
 
 ## Running the Application
 
