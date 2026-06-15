@@ -7,7 +7,8 @@ export class TransferPage {
   readonly sendButton: Locator;
   readonly clearButton: Locator;
   readonly receipt: Locator;
-  readonly submittedBanner: Locator;
+  readonly receiptHeader: Locator;
+  readonly receiptRows: Locator;
   readonly errorAlert: Locator;
 
   constructor(private page: Page) {
@@ -17,7 +18,8 @@ export class TransferPage {
     this.sendButton = page.locator('button', { hasText: 'Send Now' });
     this.clearButton = page.locator('button', { hasText: 'Clear' });
     this.receipt = page.locator('.cb-receipt');
-    this.submittedBanner = page.locator('.cb-submitted');
+    this.receiptHeader = page.locator('.cb-receipt-header');
+    this.receiptRows = page.locator('.cb-receipt-row');
     this.errorAlert = page.locator('.alert-danger');
   }
 
@@ -38,5 +40,9 @@ export class TransferPage {
   async fillAndSubmit(srcId: string, amount: number, destId: string) {
     await this.fill(srcId, amount, destId);
     await this.submit();
+  }
+
+  receiptRowAt(index: number): Locator {
+    return this.receiptRows.nth(index);
   }
 }

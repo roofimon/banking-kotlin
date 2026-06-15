@@ -6,6 +6,7 @@ import arrow.core.left
 import arrow.core.right
 import com.bank.djackatron2.adapter.inbound.web.dto.AccountEventDto
 import com.bank.djackatron2.adapter.inbound.web.dto.ErrorResponse
+import com.bank.djackatron2.adapter.inbound.web.dto.TransferReceiptDto
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DepositReceipt
 import com.bank.djackatron2.domain.DomainError
@@ -14,6 +15,8 @@ import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
+import com.bank.djackatron2.port.outbound.StoredTransferReceipt
+import com.bank.djackatron2.port.outbound.TransferReceiptRepositoryPort
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -29,7 +32,9 @@ class AccountControllerTest {
     private val transferUseCase: TransferUseCase = mock(TransferUseCase::class.java)
     private val depositUseCase: DepositUseCase = mock(DepositUseCase::class.java)
     private val eventStore: EventStorePort = mock(EventStorePort::class.java)
-    private val controller: AccountController = AccountController(repository, transferUseCase, depositUseCase, eventStore)
+    private val receiptRepository: TransferReceiptRepositoryPort = mock(TransferReceiptRepositoryPort::class.java)
+    private val controller: AccountController =
+        AccountController(repository, transferUseCase, depositUseCase, eventStore, receiptRepository)
 
     @Test
     fun testHandleById() {
@@ -131,6 +136,37 @@ class AccountControllerTest {
         `when`(repository.findById(accountId)).thenReturn(None)
 
         val result = controller.history(accountId)
+
+        assertEquals(HttpStatus.NOT_FOUND, result.statusCode)
+        assertEquals("ACCOUNT_NOT_FOUND", (result.body as ErrorResponse).code)
+    }
+
+    @Test
+    fun testReceipts() {
+        val accountId = "A123"
+        `when`(repository.findById(accountId)).thenReturn(Some(Account(accountId, 45.00)))
+        `when`(receiptRepository.findByAccountId(accountId)).thenReturn(
+            listOf(StoredTransferReceipt(accountId, "C456", 50.00, 5.00, 45.00, 50.00, Instant.now()))
+        )
+
+        val result = controller.receipts(accountId)
+
+        assertEquals(HttpStatus.OK, result.statusCode)
+        @Suppress("UNCHECKED_CAST")
+        val rows = result.body as List<TransferReceiptDto>
+        assertEquals(1, rows.size)
+        assertEquals(accountId, rows[0].srcAccountId)
+        assertEquals("C456", rows[0].dstAccountId)
+        assertEquals(50.00, rows[0].transferAmount)
+        assertEquals(5.00, rows[0].feeAmount)
+    }
+
+    @Test
+    fun testReceiptsNotFound() {
+        val accountId = "Z999"
+        `when`(repository.findById(accountId)).thenReturn(None)
+
+        val result = controller.receipts(accountId)
 
         assertEquals(HttpStatus.NOT_FOUND, result.statusCode)
         assertEquals("ACCOUNT_NOT_FOUND", (result.body as ErrorResponse).code)

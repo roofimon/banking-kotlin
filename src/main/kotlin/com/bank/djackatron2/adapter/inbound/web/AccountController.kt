@@ -2,12 +2,15 @@ package com.bank.djackatron2.adapter.inbound.web
 
 import com.bank.djackatron2.adapter.inbound.web.dto.AccountEventDto
 import com.bank.djackatron2.adapter.inbound.web.dto.TransferAcceptedResponse
+import com.bank.djackatron2.adapter.inbound.web.dto.TransferReceiptDto
 import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.event.AccountCreditedEvent
 import com.bank.djackatron2.port.inbound.DepositUseCase
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
+import com.bank.djackatron2.port.outbound.StoredTransferReceipt
+import com.bank.djackatron2.port.outbound.TransferReceiptRepositoryPort
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -22,6 +25,7 @@ class AccountController(
     private val transferUseCase: TransferUseCase,
     private val depositUseCase: DepositUseCase,
     private val eventStore: EventStorePort,
+    private val receiptRepository: TransferReceiptRepositoryPort,
 ) {
 
     @GetMapping("/{id}")
@@ -64,4 +68,21 @@ class AccountController(
                 ResponseEntity.ok(rows)
             },
         )
+
+    @GetMapping("/{id}/receipts")
+    fun receipts(@PathVariable("id") accountId: String): ResponseEntity<*> =
+        repository.findById(accountId).fold(
+            { DomainError.AccountNotFound(accountId).toResponse() },
+            { ResponseEntity.ok(receiptRepository.findByAccountId(accountId).map { it.toDto() }) },
+        )
+
+    private fun StoredTransferReceipt.toDto() = TransferReceiptDto(
+        srcAccountId = srcAccountId,
+        dstAccountId = dstAccountId,
+        transferAmount = transferAmount,
+        feeAmount = feeAmount,
+        srcFinalBalance = srcFinalBalance,
+        dstFinalBalance = dstFinalBalance,
+        createdAt = createdAt.toString(),
+    )
 }

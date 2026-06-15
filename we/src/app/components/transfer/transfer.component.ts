@@ -1,20 +1,26 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { BankingApiService } from '../../services/banking-api.service';
+import { ReceiptSocketService } from '../../services/receipt-socket.service';
+import { TransferReceipt } from '../../models/transfer-receipt.model';
 
 @Component({
   selector: 'app-transfer',
   templateUrl: './transfer.component.html',
   styleUrl: './transfer.component.scss'
 })
-export class TransferComponent {
+export class TransferComponent implements OnDestroy {
   srcId = '';
   amount: number | null = null;
   destId = '';
-  submittedMessage: string | null = null;
+  receipt: TransferReceipt | null = null;
+  pending: string | null = null;
   errorMessage: string | null = null;
   loading = false;
 
-  constructor(private api: BankingApiService) {}
+  private receiptSub?: Subscription;
+
+  constructor(private api: BankingApiService, private receiptSocket: ReceiptSocketService) {}
 
   get isFormValid(): boolean {
     return !!this.srcId.trim() && !!this.amount && this.amount > 0 && !!this.destId.trim();
@@ -22,13 +28,22 @@ export class TransferComponent {
 
   submit(): void {
     if (!this.isFormValid) return;
-    this.submittedMessage = null;
+    const srcId = this.srcId.trim();
+    this.receipt = null;
     this.errorMessage = null;
     this.loading = true;
-    // The transfer is accepted asynchronously; the receipt is delivered out-of-band by a worker.
-    this.api.transfer(this.srcId.trim(), this.amount!, this.destId.trim()).subscribe({
-      next: (ack) => { this.submittedMessage = ack.message; this.loading = false; },
-      error: (err: Error) => { this.errorMessage = err.message; this.loading = false; }
+
+    // Subscribe BEFORE submitting — STOMP topics aren't retained, so the listener must be in
+    // place before the worker pushes the saved receipt.
+    this.receiptSub?.unsubscribe();
+    this.receiptSub = this.receiptSocket.watch(srcId).subscribe((receipt) => {
+      this.receipt = receipt;
+      this.pending = null;
+    });
+
+    this.api.transfer(srcId, this.amount!, this.destId.trim()).subscribe({
+      next: () => { this.pending = 'Transfer submitted; waiting for receipt…'; this.loading = false; },
+      error: (err: Error) => { this.errorMessage = err.message; this.pending = null; this.loading = false; this.receiptSub?.unsubscribe(); }
     });
   }
 
@@ -36,7 +51,13 @@ export class TransferComponent {
     this.srcId = '';
     this.amount = null;
     this.destId = '';
-    this.submittedMessage = null;
+    this.receipt = null;
+    this.pending = null;
     this.errorMessage = null;
+    this.receiptSub?.unsubscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.receiptSub?.unsubscribe();
   }
 }

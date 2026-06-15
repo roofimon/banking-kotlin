@@ -1,6 +1,7 @@
 package com.bank.djackatron2.adapter.inbound.web
 
 import com.bank.djackatron2.port.outbound.EventStorePort
+import com.bank.djackatron2.port.outbound.TransferReceiptRepositoryPort
 import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.bind.annotation.PathVariable
@@ -12,11 +13,13 @@ import org.springframework.web.bind.annotation.RestController
 class TestResetController(
     private val jdbcTemplate: JdbcTemplate,
     private val eventStore: EventStorePort,
+    private val receiptRepository: TransferReceiptRepositoryPort,
 ) {
 
     @PostMapping("/test/reset")
     fun reset() {
         eventStore.clearAll()
+        receiptRepository.deleteAll()
         jdbcTemplate.execute("DELETE FROM ACCOUNT")
         jdbcTemplate.update("INSERT INTO ACCOUNT (ID, BALANCE) VALUES ('A123', 100.00)")
         jdbcTemplate.update("INSERT INTO ACCOUNT (ID, BALANCE) VALUES ('C456', 0.00)")

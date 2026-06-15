@@ -1,3 +1,4 @@
+drop table TRANSFER_RECEIPT if exists;
 drop table ACCOUNT_EVENT if exists;
 drop table ACCOUNT if exists;
 create table ACCOUNT (ID varchar(9) primary key, BALANCE double not null);
@@ -7,4 +8,14 @@ create table ACCOUNT_EVENT (
     EVENT_TYPE varchar(10) not null,
     AMOUNT double not null,
     OCCURRED_AT timestamp not null
+);
+create table TRANSFER_RECEIPT (
+    ID bigint auto_increment primary key,
+    SRC_ACCOUNT_ID varchar(9) not null,
+    DST_ACCOUNT_ID varchar(9) not null,
+    TRANSFER_AMOUNT double not null,
+    FEE_AMOUNT double not null,
+    SRC_FINAL_BALANCE double not null,
+    DST_FINAL_BALANCE double not null,
+    CREATED_AT timestamp not null
 );
