@@ -2,6 +2,7 @@ package com.bank.djackatron2.port.inbound
 
 import arrow.core.Either
 import com.bank.djackatron2.domain.DomainError
+import com.bank.djackatron2.domain.TransferId
 import com.bank.djackatron2.domain.TransferReceipt
 
 /**
@@ -21,34 +22,33 @@ import com.bank.djackatron2.domain.TransferReceipt
 interface TransferUseCase {
 
     /**
-     * Moves [amount] from the account identified by [srcAcctId] to [dstAcctId].
+     * Moves [TransferCommand.amount] from [TransferCommand.srcAcctId] to [TransferCommand.dstAcctId].
      *
      * Execution contract (in order):
-     * 1. Validates that [amount] is ≥ the configured minimum transfer amount.
+     * 1. Validates that the amount is ≥ the configured minimum transfer amount.
      * 2. If a [com.bank.djackatron2.port.outbound.TimeServicePort] is wired,
      *    checks that the transfer service is currently available.
      * 3. Loads both accounts from the repository.
      * 4. Calculates the fee via the fee-policy adapter and debits it from the source account
      *    (fee-debit failure is silently swallowed — the transfer still proceeds).
-     * 5. Debits [amount] from the source account (fails with [DomainError.InsufficientFunds]).
-     * 6. Credits [amount] to the destination account.
+     * 5. Debits the amount from the source account (fails with [DomainError.InsufficientFunds]).
+     * 6. Credits the amount to the destination account.
      * 7. Persists the updated balances for both accounts.
      * 8. Publishes a `TransferCompletedEvent` (carrying the [TransferReceipt]) to the internal bus;
      *    a worker delivers the receipt out-of-band. The receipt is **not** returned to the caller.
      *
-     * @param amount       The amount to transfer. Must be ≥ the configured minimum.
-     * @param srcAcctId    ID of the account to debit.
-     * @param dstAcctId    ID of the account to credit.
-     * @return             [Either.Right] with [Unit] once the transfer is applied and the
-     *                     `TransferCompletedEvent` is published, or [Either.Left] with a [DomainError]:
-     *                     - [DomainError.BelowMinimum]     if [amount] is below the minimum threshold.
+     * @param command      The transfer inputs (amount, source and destination account ids).
+     * @return             [Either.Right] with the accepted transfer's [TransferId] once the transfer
+     *                     is applied and the `TransferCompletedEvent` is published (the receipt is
+     *                     delivered out-of-band), or [Either.Left] with a [DomainError]:
+     *                     - [DomainError.BelowMinimum]     if the amount is below the minimum threshold.
      *                     - [DomainError.OutOfService]     if the time-service guard is active and the
      *                       current time falls outside the configured service window.
-     *                     - [DomainError.AccountNotFound]  if either [srcAcctId] or [dstAcctId] is unknown.
-     *                     - [DomainError.InsufficientFunds] if the source balance cannot cover [amount]
+     *                     - [DomainError.AccountNotFound]  if either account id is unknown.
+     *                     - [DomainError.InsufficientFunds] if the source balance cannot cover the amount
      *                       (after any fee has been attempted).
      */
-    fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, Unit>
+    fun transfer(command: TransferCommand): Either<DomainError, TransferId>
 
     /**
      * Sets the lower bound for accepted transfer amounts.

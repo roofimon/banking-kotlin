@@ -14,7 +14,7 @@ class WebSocketReceiptSenderTest {
         val messagingTemplate = mock(SimpMessagingTemplate::class.java)
         val sender = WebSocketReceiptSender(messagingTemplate)
 
-        val receipt = TransferReceipt(Account("A123", 100.00), Account("C456", 0.00)).apply {
+        val receipt = TransferReceipt("t-1", Account("A123", 100.00), Account("C456", 0.00)).apply {
             setFinalSourceAccount(Account("A123", 45.00))
             setFinalDestinationAccount(Account("C456", 50.00))
         }

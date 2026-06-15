@@ -5,7 +5,9 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import com.bank.djackatron2.application.event.TransferCompletedEvent
 import com.bank.djackatron2.domain.DomainError
+import com.bank.djackatron2.domain.TransferId
 import com.bank.djackatron2.domain.TransferReceipt
+import com.bank.djackatron2.port.inbound.TransferCommand
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
@@ -14,6 +16,7 @@ import com.bank.djackatron2.port.outbound.TimeServicePort
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.time.LocalTime
+import java.util.UUID
 
 @Service
 class TransferMoneyUseCase(
@@ -26,7 +29,9 @@ class TransferMoneyUseCase(
     private var minimumTransferAmount = 1.00
     private var timeService: TimeServicePort? = null
 
-    override fun transfer(amount: Double, srcAcctId: String, dstAcctId: String): Either<DomainError, Unit> = either {
+    override fun transfer(command: TransferCommand): Either<DomainError, TransferId> = either {
+        val (amount, srcAcctId, dstAcctId) = command
+
         ensure(amount >= minimumTransferAmount) {
             DomainError.BelowMinimum(amount, minimumTransferAmount, "transfer")
         }
@@ -38,7 +43,9 @@ class TransferMoneyUseCase(
         val dstAcct = accountRepository.findById(dstAcctId)
             .toEither { DomainError.AccountNotFound(dstAcctId) }.bind()
 
+        val transferId = TransferId(UUID.randomUUID().toString())
         val receipt = TransferReceipt(
+            transferId = transferId.value,
             initialSourceAccountCopy = srcAcct,
             initialDestinationAccountCopy = dstAcct,
         )
@@ -62,6 +69,8 @@ class TransferMoneyUseCase(
 
         // Hand the receipt off to the internal bus; a worker delivers it out-of-band.
         eventPublisher.publishEvent(TransferCompletedEvent(receipt))
+
+        transferId
     }
 
     override fun setMinimumTransferAmount(minimumTransferAmount: Double) {

@@ -14,6 +14,7 @@ import com.bank.djackatron2.application.event.TransferCompletedEvent
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DomainError
 import com.bank.djackatron2.domain.TransferReceipt
+import com.bank.djackatron2.port.inbound.TransferCommand
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
@@ -67,10 +68,13 @@ class DefaultTransferServiceTest {
     fun testTransfer() {
         val transferAmount = 100.00
 
-        val result = transferService.transfer(transferAmount, A123_ID, C456_ID)
+        val result = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID))
         assertThat(result.isRight(), CoreMatchers.equalTo(true))
+        assertThat(result.getOrNull()!!.value.isNotBlank(), CoreMatchers.equalTo(true))
 
         val receipt = lastReceipt()
+        // The receipt carries the same id returned to the caller.
+        assertThat(receipt.getTransferId(), CoreMatchers.equalTo(result.getOrNull()!!.value))
         assertThat(receipt.getTransferAmount(), CoreMatchers.equalTo(transferAmount))
         assertThat(
             receipt.getFinalSourceAccount().getBalance(),
@@ -111,7 +115,7 @@ class DefaultTransferServiceTest {
         val publisher = ApplicationEventPublisher { event -> captured.add(event) }
         val transferService: TransferUseCase = TransferMoneyUseCase(mockAccRepo, mockFeePolicy, mockEventStore, publisher)
 
-        val result = transferService.transfer(transferAmount, srcAccId, desAccId)
+        val result = transferService.transfer(TransferCommand(transferAmount, srcAccId, desAccId))
         assertThat(result.isRight(), CoreMatchers.equalTo(true))
 
         val receipt = (captured.last() as TransferCompletedEvent).receipt
@@ -127,7 +131,7 @@ class DefaultTransferServiceTest {
         `when`(mockTimeService.isServiceAvailable(any<LocalTime>())).thenReturn(true)
         transferService.setTimeService(mockTimeService)
 
-        val result = transferService.transfer(transferAmount, A123_ID, C456_ID)
+        val result = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID))
         assertThat(result.isRight(), CoreMatchers.equalTo(true))
 
         val receipt = lastReceipt()
@@ -159,7 +163,7 @@ class DefaultTransferServiceTest {
         `when`(mockTimeService.isServiceAvailable(any<LocalTime>())).thenReturn(false)
         transferService.setTimeService(mockTimeService)
 
-        val error = transferService.transfer(transferAmount, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
 
         assertThat(error, CoreMatchers.instanceOf(DomainError.OutOfService::class.java))
         verify(mockTimeService).isServiceAvailable(any<LocalTime>())
@@ -170,14 +174,14 @@ class DefaultTransferServiceTest {
         val overage = 9.00
         val transferAmount = A123_INITIAL_BAL + overage
 
-        val error = transferService.transfer(transferAmount, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
 
         assertThat(error, CoreMatchers.instanceOf(DomainError.InsufficientFunds::class.java))
     }
 
     @Test
     fun testNonExistentSourceAccount() {
-        val error = transferService.transfer(1.00, Z999_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(1.00, Z999_ID, C456_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.AccountNotFound::class.java))
 
         assertThat(accountRepository.findById(C456_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(C456_INITIAL_BAL))
@@ -185,7 +189,7 @@ class DefaultTransferServiceTest {
 
     @Test
     fun testNonExistentDestinationAccount() {
-        val error = transferService.transfer(1.00, A123_ID, Z999_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(1.00, A123_ID, Z999_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.AccountNotFound::class.java))
 
         assertThat(accountRepository.findById(A123_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(A123_INITIAL_BAL))
@@ -193,29 +197,29 @@ class DefaultTransferServiceTest {
 
     @Test
     fun testZeroTransferAmount() {
-        val error = transferService.transfer(0.00, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(0.00, A123_ID, C456_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
     }
 
     @Test
     fun testNegativeTransferAmount() {
-        val error = transferService.transfer(-100.00, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(-100.00, A123_ID, C456_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
     }
 
     @Test
     fun testTransferAmountLessThanOneCent() {
-        val error = transferService.transfer(0.009, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(0.009, A123_ID, C456_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
     }
 
     @Test
     fun testCustomizedMinimumTransferAmount() {
-        transferService.transfer(1.00, A123_ID, C456_ID)
+        transferService.transfer(TransferCommand(1.00, A123_ID, C456_ID))
         transferService.setMinimumTransferAmount(10.00)
-        transferService.transfer(10.00, A123_ID, C456_ID)
+        transferService.transfer(TransferCommand(10.00, A123_ID, C456_ID))
 
-        val error = transferService.transfer(9.00, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(9.00, A123_ID, C456_ID)).leftOrNull()
         assertThat(
             "expected BelowMinimum on 9.00 transfer that violates 10.00 minimum",
             error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java)
@@ -227,7 +231,7 @@ class DefaultTransferServiceTest {
         val flatFee = 5.00
         val transferAmount = 95.00
         transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore, eventPublisher)
-        transferService.transfer(transferAmount, A123_ID, C456_ID)
+        transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID))
         assertThat(
             accountRepository.findById(A123_ID).getOrNull()!!.getBalance(),
             CoreMatchers.equalTo(A123_INITIAL_BAL - transferAmount - flatFee)
@@ -244,7 +248,7 @@ class DefaultTransferServiceTest {
         val transferAmount = 99.00
         transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore, eventPublisher)
 
-        val error = transferService.transfer(transferAmount, A123_ID, C456_ID).leftOrNull()
+        val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
         assertThat(error, CoreMatchers.instanceOf(DomainError.InsufficientFunds::class.java))
     }
 }

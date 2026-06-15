@@ -6,12 +6,15 @@ import arrow.core.left
 import arrow.core.right
 import com.bank.djackatron2.adapter.inbound.web.dto.AccountEventDto
 import com.bank.djackatron2.adapter.inbound.web.dto.ErrorResponse
+import com.bank.djackatron2.adapter.inbound.web.dto.TransferAcceptedResponse
 import com.bank.djackatron2.adapter.inbound.web.dto.TransferReceiptDto
 import com.bank.djackatron2.domain.Account
 import com.bank.djackatron2.domain.DepositReceipt
 import com.bank.djackatron2.domain.DomainError
+import com.bank.djackatron2.domain.TransferId
 import com.bank.djackatron2.domain.event.AccountCreditedEvent
 import com.bank.djackatron2.port.inbound.DepositUseCase
+import com.bank.djackatron2.port.inbound.TransferCommand
 import com.bank.djackatron2.port.inbound.TransferUseCase
 import com.bank.djackatron2.port.outbound.AccountRepositoryPort
 import com.bank.djackatron2.port.outbound.EventStorePort
@@ -63,19 +66,20 @@ class AccountControllerTest {
     fun testHandleTransfer() {
         val srcId = "A123"
         val destId = "B123"
-        `when`(transferUseCase.transfer(100.00, srcId, destId)).thenReturn(Unit.right())
+        `when`(transferUseCase.transfer(TransferCommand(100.00, srcId, destId))).thenReturn(TransferId("t-1").right())
 
         val result = controller.handleTransfer(srcId, 100.00, destId)
 
         assertEquals(HttpStatus.ACCEPTED, result.statusCode)
-        verify(transferUseCase).transfer(100.00, srcId, destId)
+        assertEquals("t-1", (result.body as TransferAcceptedResponse).transferId)
+        verify(transferUseCase).transfer(TransferCommand(100.00, srcId, destId))
     }
 
     @Test
     fun testHandleTransferInsufficientFunds() {
         val srcId = "A123"
         val destId = "B123"
-        `when`(transferUseCase.transfer(200.00, srcId, destId))
+        `when`(transferUseCase.transfer(TransferCommand(200.00, srcId, destId)))
             .thenReturn(DomainError.InsufficientFunds(srcId, 200.00, 100.00).left())
 
         val result = controller.handleTransfer(srcId, 200.00, destId)
@@ -146,7 +150,7 @@ class AccountControllerTest {
         val accountId = "A123"
         `when`(repository.findById(accountId)).thenReturn(Some(Account(accountId, 45.00)))
         `when`(receiptRepository.findByAccountId(accountId)).thenReturn(
-            listOf(StoredTransferReceipt(accountId, "C456", 50.00, 5.00, 45.00, 50.00, Instant.now()))
+            listOf(StoredTransferReceipt("tx-1", accountId, "C456", 50.00, 5.00, 45.00, 50.00, Instant.now()))
         )
 
         val result = controller.receipts(accountId)
@@ -155,6 +159,7 @@ class AccountControllerTest {
         @Suppress("UNCHECKED_CAST")
         val rows = result.body as List<TransferReceiptDto>
         assertEquals(1, rows.size)
+        assertEquals("tx-1", rows[0].transferId)
         assertEquals(accountId, rows[0].srcAccountId)
         assertEquals("C456", rows[0].dstAccountId)
         assertEquals(50.00, rows[0].transferAmount)

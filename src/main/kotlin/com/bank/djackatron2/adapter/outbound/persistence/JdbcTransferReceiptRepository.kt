@@ -17,9 +17,10 @@ class JdbcTransferReceiptRepository(private val jdbcTemplate: JdbcTemplate) : Tr
         jdbcTemplate.update(
             """
             insert into TRANSFER_RECEIPT
-                (SRC_ACCOUNT_ID, DST_ACCOUNT_ID, TRANSFER_AMOUNT, FEE_AMOUNT, SRC_FINAL_BALANCE, DST_FINAL_BALANCE, CREATED_AT)
-            values (?, ?, ?, ?, ?, ?, ?)
+                (TRANSFER_ID, SRC_ACCOUNT_ID, DST_ACCOUNT_ID, TRANSFER_AMOUNT, FEE_AMOUNT, SRC_FINAL_BALANCE, DST_FINAL_BALANCE, CREATED_AT)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
+            receipt.getTransferId(),
             receipt.getFinalSourceAccount().getId(),
             receipt.getFinalDestinationAccount().getId(),
             receipt.getTransferAmount(),
@@ -33,7 +34,7 @@ class JdbcTransferReceiptRepository(private val jdbcTemplate: JdbcTemplate) : Tr
     override fun findByAccountId(accountId: String): List<StoredTransferReceipt> =
         jdbcTemplate.query(
             """
-            select SRC_ACCOUNT_ID, DST_ACCOUNT_ID, TRANSFER_AMOUNT, FEE_AMOUNT, SRC_FINAL_BALANCE, DST_FINAL_BALANCE, CREATED_AT
+            select TRANSFER_ID, SRC_ACCOUNT_ID, DST_ACCOUNT_ID, TRANSFER_AMOUNT, FEE_AMOUNT, SRC_FINAL_BALANCE, DST_FINAL_BALANCE, CREATED_AT
             from TRANSFER_RECEIPT
             where SRC_ACCOUNT_ID = ? or DST_ACCOUNT_ID = ?
             order by CREATED_AT desc, ID desc
@@ -50,6 +51,7 @@ class JdbcTransferReceiptRepository(private val jdbcTemplate: JdbcTemplate) : Tr
     private class StoredTransferReceiptRowMapper : RowMapper<StoredTransferReceipt> {
         override fun mapRow(rs: ResultSet, rowNum: Int): StoredTransferReceipt =
             StoredTransferReceipt(
+                transferId = rs.getString("TRANSFER_ID"),
                 srcAccountId = rs.getString("SRC_ACCOUNT_ID"),
                 dstAccountId = rs.getString("DST_ACCOUNT_ID"),
                 transferAmount = rs.getDouble("TRANSFER_AMOUNT"),

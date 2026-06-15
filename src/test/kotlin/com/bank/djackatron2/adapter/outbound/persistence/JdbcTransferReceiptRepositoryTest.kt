@@ -23,8 +23,11 @@ class JdbcTransferReceiptRepositoryTest {
         repository = JdbcTransferReceiptRepository(JdbcTemplate(dataSource))
     }
 
-    private fun receipt(srcId: String, dstId: String, amount: Double, fee: Double, srcFinal: Double, dstFinal: Double) =
-        TransferReceipt(Account(srcId, 0.0), Account(dstId, 0.0)).apply {
+    private fun receipt(
+        transferId: String, srcId: String, dstId: String,
+        amount: Double, fee: Double, srcFinal: Double, dstFinal: Double,
+    ) =
+        TransferReceipt(transferId, Account(srcId, 0.0), Account(dstId, 0.0)).apply {
             setTransferAmount(amount)
             setFeeAmount(fee)
             setFinalSourceAccount(Account(srcId, srcFinal))
@@ -33,11 +36,12 @@ class JdbcTransferReceiptRepositoryTest {
 
     @Test
     fun savesAndFindsByBothSourceAndDestination() {
-        repository.save(receipt("A123", "C456", 50.00, 5.00, 45.00, 50.00))
+        repository.save(receipt("tx-1", "A123", "C456", 50.00, 5.00, 45.00, 50.00))
 
         for (accountId in listOf("A123", "C456")) {
             val stored = repository.findByAccountId(accountId)
             assertThat(stored.size, equalTo(1))
+            assertThat(stored[0].transferId, equalTo("tx-1"))
             assertThat(stored[0].srcAccountId, equalTo("A123"))
             assertThat(stored[0].dstAccountId, equalTo("C456"))
             assertThat(stored[0].transferAmount, equalTo(50.00))
@@ -54,7 +58,7 @@ class JdbcTransferReceiptRepositoryTest {
 
     @Test
     fun deleteAllRemovesEverything() {
-        repository.save(receipt("A123", "C456", 10.00, 0.00, 90.00, 10.00))
+        repository.save(receipt("tx-2", "A123", "C456", 10.00, 0.00, 90.00, 10.00))
         repository.deleteAll()
         assertThat(repository.findByAccountId("A123").size, equalTo(0))
     }

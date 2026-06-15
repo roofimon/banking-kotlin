@@ -19,6 +19,7 @@ interface TransferReceiptRepositoryPort {
 
 /** A persisted transfer receipt as read back from storage. */
 data class StoredTransferReceipt(
+    val transferId: String,
     val srcAccountId: String,
     val dstAccountId: String,
     val transferAmount: Double,

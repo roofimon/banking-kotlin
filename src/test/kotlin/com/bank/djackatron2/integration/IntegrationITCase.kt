@@ -5,6 +5,7 @@ import com.bank.djackatron2.adapter.outbound.persistence.JdbcEventStore
 import com.bank.djackatron2.adapter.outbound.service.ZeroFeePolicy
 import com.bank.djackatron2.application.usecase.DepositMoneyUseCase
 import com.bank.djackatron2.application.usecase.TransferMoneyUseCase
+import com.bank.djackatron2.port.inbound.TransferCommand
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
@@ -37,7 +38,7 @@ class IntegrationITCase {
         assertThat(accountRepository.findById("A123").getOrNull()!!.getBalance(), CoreMatchers.equalTo(100.00))
         assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(0.00))
 
-        transferService.transfer(10.00, "A123", "C456")
+        transferService.transfer(TransferCommand(10.00, "A123", "C456"))
 
         assertThat(accountRepository.findById("A123").getOrNull()!!.getBalance(), CoreMatchers.equalTo(90.00))
         assertThat(accountRepository.findById("C456").getOrNull()!!.getBalance(), CoreMatchers.equalTo(10.00))

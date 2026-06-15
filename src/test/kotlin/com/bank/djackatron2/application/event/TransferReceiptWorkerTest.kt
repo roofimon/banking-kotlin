@@ -17,7 +17,7 @@ class TransferReceiptWorkerTest {
         val senderA = mock(ReceiptSenderPort::class.java)
         val senderB = mock(ReceiptSenderPort::class.java)
         val worker = TransferReceiptWorker(repository, listOf(senderA, senderB))
-        val receipt = TransferReceipt(Account("A123", 100.00), Account("C456", 0.00))
+        val receipt = TransferReceipt("t-1", Account("A123", 100.00), Account("C456", 0.00))
 
         worker.on(TransferCompletedEvent(receipt))
 

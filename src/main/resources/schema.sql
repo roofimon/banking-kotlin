@@ -11,6 +11,7 @@ create table ACCOUNT_EVENT (
 );
 create table TRANSFER_RECEIPT (
     ID bigint auto_increment primary key,
+    TRANSFER_ID varchar(36) not null,
     SRC_ACCOUNT_ID varchar(9) not null,
     DST_ACCOUNT_ID varchar(9) not null,
     TRANSFER_AMOUNT double not null,

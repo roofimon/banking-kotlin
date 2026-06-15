@@ -1,6 +1,7 @@
 package com.bank.djackatron2.domain
 
 class TransferReceipt(
+    private val transferId: String,
     private var initialSourceAccountCopy: Account,
     private var initialDestinationAccountCopy: Account,
 ) {
@@ -26,6 +27,7 @@ class TransferReceipt(
         this.finalDestinationAccountCopy = finalDestinationAccountCopy
     }
 
+    fun getTransferId() = transferId
     fun getTransferAmount() = transferAmount
     fun getFeeAmount() = feeAmount
     fun getFinalSourceAccount() = finalSourceAccountCopy
@@ -33,7 +35,7 @@ class TransferReceipt(
 
     override fun toString(): String =
         """
-            Transferred $transferAmount from account ${initialSourceAccountCopy.getId()} to ${initialDestinationAccountCopy.getId()}, with fee amount: $feeAmount
+            Transfer $transferId: transferred $transferAmount from account ${initialSourceAccountCopy.getId()} to ${initialDestinationAccountCopy.getId()}, with fee amount: $feeAmount
                 initial balance for account ${initialSourceAccountCopy.getId()}: ${initialSourceAccountCopy.getBalance()}; new balance: ${finalSourceAccountCopy.getBalance()}
                 initial balance for account ${initialDestinationAccountCopy.getId()}: ${initialDestinationAccountCopy.getBalance()}; new balance: ${finalDestinationAccountCopy.getBalance()}
         """.trimIndent()
