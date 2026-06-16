@@ -1,4 +1,4 @@
-# Features — djackatron2 Banking Application
+# Features — MemeBank88 Banking Application
 
 Hexagonal architecture Spring Boot banking service with transfer, fee, and time-restriction capabilities.
 

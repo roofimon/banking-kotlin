@@ -1,0 +1,110 @@
+<div class="cb-page">
+  <h1 class="cb-page-title">Open an account</h1>
+
+  <!-- progress header -->
+  <div class="cb-steps" *ngIf="!isDone">
+    <span class="cb-step" [class.active]="currentStep >= 1">1 · Email</span>
+    <span class="cb-step" [class.active]="currentStep >= 2">2 · Info</span>
+    <span class="cb-step" [class.active]="currentStep >= 3">3 · Token</span>
+    <span class="cb-step" [class.active]="currentStep >= 4">4 · Credit</span>
+  </div>
+
+  <div class="cb-card">
+    <!-- Step 1a: enter email -->
+    <ng-container *ngIf="!onboarding">
+      <div class="mb-4">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" [(ngModel)]="email" placeholder="you@example.com" />
+      </div>
+      <button class="btn btn-primary w-100" (click)="start()" [disabled]="loading || !email.trim()">
+        {{ loading ? 'Starting…' : 'Start' }}
+      </button>
+    </ng-container>
+
+    <!-- Step 1b: verify email code -->
+    <ng-container *ngIf="onboarding?.status === 'STARTED'">
+      <p class="text-muted small">We sent a verification code to {{ onboarding?.email }}.</p>
+      <p class="text-muted small">Demo code: <strong>{{ onboarding?.emailCode }}</strong></p>
+      <div class="mb-4">
+        <label class="form-label">Verification code</label>
+        <input type="text" class="form-control" [(ngModel)]="code" placeholder="6-digit code" />
+      </div>
+      <button class="btn btn-primary w-100" (click)="verifyEmail()" [disabled]="loading || !code.trim()">
+        {{ loading ? 'Verifying…' : 'Verify email' }}
+      </button>
+    </ng-container>
+
+    <!-- Step 2: customer info -->
+    <ng-container *ngIf="onboarding?.status === 'EMAIL_VERIFIED'">
+      <div class="mb-4">
+        <label class="form-label">Full name</label>
+        <input type="text" class="form-control" [(ngModel)]="name" placeholder="Jane Doe" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Phone number</label>
+        <input type="text" class="form-control" [(ngModel)]="phone" placeholder="0812345678" />
+      </div>
+      <button class="btn btn-primary w-100" (click)="submitInfo()" [disabled]="loading || !name.trim() || !phone.trim()">
+        {{ loading ? 'Submitting…' : 'Continue' }}
+      </button>
+    </ng-container>
+
+    <!-- Step 3: verify session token -->
+    <ng-container *ngIf="onboarding?.status === 'INFO_SUBMITTED'">
+      <p class="text-muted small">Enter the session token to confirm your application.</p>
+      <p class="text-muted small">Demo token: <strong>{{ onboarding?.sessionToken }}</strong></p>
+      <div class="mb-4">
+        <label class="form-label">Session token</label>
+        <input type="text" class="form-control" [(ngModel)]="token" placeholder="token" />
+      </div>
+      <button class="btn btn-primary w-100" (click)="verifyToken()" [disabled]="loading || !token.trim()">
+        {{ loading ? 'Verifying…' : 'Verify token' }}
+      </button>
+    </ng-container>
+
+    <!-- Step 4: credit scoring -->
+    <ng-container *ngIf="onboarding?.status === 'TOKEN_VERIFIED'">
+      <p class="text-muted small">Tell us about your finances to complete your application.</p>
+      <div class="mb-4">
+        <label class="form-label">Annual salary</label>
+        <input type="number" class="form-control" [(ngModel)]="salary" placeholder="50000" min="0" step="0.01" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Occupation</label>
+        <select class="form-select" [(ngModel)]="occupation">
+          <option value="" disabled>Select your occupation…</option>
+          <option *ngFor="let o of occupations" [value]="o.code">{{ o.label }}</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Monthly cost</label>
+        <input type="number" class="form-control" [(ngModel)]="monthlyCost" placeholder="2000" min="0" step="0.01" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Total wealth</label>
+        <input type="number" class="form-control" [(ngModel)]="totalWealth" placeholder="100000" min="0" step="0.01" />
+      </div>
+      <button class="btn btn-primary w-100" (click)="runScore()" [disabled]="loading || !scoreFormValid">
+        {{ loading ? 'Checking…' : 'Run credit check' }}
+      </button>
+    </ng-container>
+
+    <!-- Result: approved -->
+    <ng-container *ngIf="onboarding?.status === 'COMPLETED'">
+      <div class="cb-receipt-header"><div class="cb-check">✓</div> Approved</div>
+      <p class="mt-3 mb-1">Your account number is <strong>{{ onboarding?.accountId }}</strong>.</p>
+      <p class="mb-1">Your temporary password is <strong>{{ onboarding?.password }}</strong>.</p>
+      <p class="text-muted small">Credit score: {{ onboarding?.creditScore }}</p>
+      <button class="btn btn-outline-secondary w-100 mt-3" (click)="reset()">Start over</button>
+    </ng-container>
+
+    <!-- Result: declined -->
+    <ng-container *ngIf="onboarding?.status === 'REJECTED'">
+      <h2 class="h5">Application declined</h2>
+      <p class="text-muted small">Credit score: {{ onboarding?.creditScore }} (below the approval threshold).</p>
+      <button class="btn btn-outline-secondary w-100 mt-3" (click)="reset()">Start over</button>
+    </ng-container>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+</div>

@@ -1,0 +1,19 @@
+.cb-steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.cb-step {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #f0f0f3;
+  color: #8a8a8a;
+
+  &.active {
+    background: #0052ff;
+    color: #fff;
+  }
+}

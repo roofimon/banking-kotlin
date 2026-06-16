@@ -2,7 +2,7 @@
 
 A Spring Boot + Kotlin TDD demo implementing a bank account service using **Hexagonal Architecture** (Ports & Adapters) with an **event-sourced** persistence layer. The domain logic is fully isolated from infrastructure concerns, and every behaviour is driven by tests — JUnit for the backend, Playwright for the Angular web UI.
 
-Capabilities: look up a balance, transfer money (with fee policies and service-hour rules), deposit money, and view an account's transaction history.
+Capabilities: open an account through a guided onboarding flow (email verification → customer info → session-token check → credit scoring), look up a balance, transfer money (with fee policies and service-hour rules), deposit money, and view an account's transaction history.
 
 ---
 
@@ -55,19 +55,46 @@ The `ACCOUNT` table holds a **seed balance** per account; the `ACCOUNT_EVENT` ta
 
 ---
 
+## Account onboarding
+
+New customers open an account through a four-step flow modelled as an immutable state machine
+(`domain/Onboarding.kt`). Each transition is a pure function returning Arrow `Either<DomainError, Onboarding>`,
+so step order and code/token matching are enforced in the domain; all side effects (code generation,
+credit scoring, account creation) live in `OnboardingService`.
+
+```
+STARTED ──verify-email──► EMAIL_VERIFIED ──info──► INFO_SUBMITTED ──verify-token──► TOKEN_VERIFIED ──score──► COMPLETED
+                                                                                                          └────► REJECTED
+```
+
+| # | Step | Endpoint | What happens |
+|---|---|---|---|
+| 1 | Start | `POST /onboarding` `{ email }` | Creates a session (`201`), issues a 6-digit email code. Status → `STARTED` |
+| 1b | Verify email | `POST /onboarding/{id}/verify-email` `{ code }` | Matches the issued code. Status → `EMAIL_VERIFIED` |
+| 2 | Submit info | `POST /onboarding/{id}/info` `{ name, phoneNumber }` | Captures customer details, issues a session token. Status → `INFO_SUBMITTED` |
+| 3 | Verify token | `POST /onboarding/{id}/verify-token` `{ token }` | Matches the session token. Status → `TOKEN_VERIFIED` |
+| 4 | Score | `POST /onboarding/{id}/score` | `DefaultCreditScoringService` scores the applicant (300–899); approval at ≥ 600 provisions an account via `AccountProvisioningPort`. Status → `COMPLETED` (with `accountId`) or `REJECTED` |
+| — | Fetch | `GET /onboarding/{id}` | Returns the current onboarding state |
+
+> **Demo note:** the email code and session token are stubs — they're logged and returned in the API
+> response (and shown in the web UI) so the flow can be completed without a real email/SMS provider.
+> Credit scoring is a deterministic stub: the same applicant details always yield the same decision.
+
+---
+
 ## Package Map
 
 | Package | Role |
 |---|---|
-| `domain/` | Pure business entities — `Account`, `TransferReceipt`, `DepositReceipt`, `InsufficientFundsException` |
+| `domain/` | Pure business entities — `Account`, `TransferReceipt`, `DepositReceipt`, `Onboarding` (4-step state machine), `OnboardingStatus`, `DomainError`, `InsufficientFundsException` |
 | `domain/event/` | `AccountEvent` (sealed) · `AccountCreditedEvent` · `AccountDebitedEvent` |
 | `application/exception/` | `OutOfServiceException` |
-| `application/usecase/` | `TransferMoneyUseCase`, `DepositMoneyUseCase` — orchestrate the ports |
-| `port/inbound/` | `TransferUseCase`, `DepositUseCase` — driving ports |
-| `port/outbound/` | `AccountRepositoryPort`, `EventStorePort`, `FeePolicyPort`, `TimeServicePort` |
-| `adapter/inbound/web/` | `AccountController`, `CorsConfig`, `TestResetController` (test-only), `dto/AccountEventDto` |
-| `adapter/outbound/persistence/` | `EventSourcedAccountRepository`, `JdbcEventStore` (H2/JDBC) |
-| `adapter/outbound/service/` | `FlatFeePolicy`, `VariableFeePolicy`, `ZeroFeePolicy`, `DefaultTimeService`, `CheckingTimeAdvice` |
+| `application/usecase/` | `TransferMoneyUseCase`, `DepositMoneyUseCase`, `OnboardingService` — orchestrate the ports |
+| `port/inbound/` | `TransferUseCase`, `DepositUseCase`, `OnboardingUseCase` — driving ports |
+| `port/outbound/` | `AccountRepositoryPort`, `EventStorePort`, `FeePolicyPort`, `TimeServicePort`, `OnboardingRepositoryPort`, `CreditScoringPort`, `AccountProvisioningPort` |
+| `adapter/inbound/web/` | `AccountController`, `OnboardingController`, `CorsConfig`, `TestResetController` (test-only), `dto/AccountEventDto`, `dto/OnboardingDtos` |
+| `adapter/outbound/persistence/` | `EventSourcedAccountRepository`, `JdbcEventStore` (H2/JDBC), `JdbcOnboardingRepository`, `JdbcAccountProvisioning` |
+| `adapter/outbound/service/` | `FlatFeePolicy`, `VariableFeePolicy`, `ZeroFeePolicy`, `DefaultTimeService`, `CheckingTimeAdvice`, `DefaultCreditScoringService` |
 
 ---
 
@@ -89,7 +116,7 @@ The `ACCOUNT` table holds a **seed balance** per account; the `ACCOUNT_EVENT` ta
 | AOP time advice | `CheckingTimeAdviceTest` | blocks out-of-hours, allows in-hours |
 | Deposit credits account | `DepositMoneyUseCaseTest` | balance increased, credit event raised |
 | Full DB integration | `IntegrationITCase#transferTenDollars` | real H2 balances persist after transfer |
-| Spring context loads | `Djackatron2ApplicationTests#contextLoads` | all beans wired correctly |
+| Spring context loads | `MemeBank88ApplicationTests#contextLoads` | all beans wired correctly |
 
 ---
 
@@ -122,6 +149,7 @@ An Angular 17 SPA (Bootstrap styling) consuming the REST API, with one route per
 
 | Route | Screen |
 |---|---|
+| `/onboarding` | Open an account (guided multi-step wizard) |
 | `/account` | Balance lookup |
 | `/transfer` | Send money |
 | `/deposit` | Deposit money |

@@ -11,6 +11,7 @@ import { TransferReceiptComponent } from './components/transfer-receipt/transfer
 import { DepositComponent } from './components/deposit/deposit.component';
 import { DepositReceiptComponent } from './components/deposit-receipt/deposit-receipt.component';
 import { HistoryComponent } from './components/history/history.component';
+import { OnboardingComponent } from './components/onboarding/onboarding.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import { HistoryComponent } from './components/history/history.component';
     DepositComponent,
     DepositReceiptComponent,
     HistoryComponent,
+    OnboardingComponent,
   ],
   imports: [
     BrowserModule,

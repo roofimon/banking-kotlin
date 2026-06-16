@@ -4,6 +4,7 @@ import { AccountLookupComponent } from './components/account-lookup/account-look
 import { TransferComponent } from './components/transfer/transfer.component';
 import { DepositComponent } from './components/deposit/deposit.component';
 import { HistoryComponent } from './components/history/history.component';
+import { OnboardingComponent } from './components/onboarding/onboarding.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'account', pathMatch: 'full' },
@@ -11,6 +12,7 @@ const routes: Routes = [
   { path: 'transfer', component: TransferComponent },
   { path: 'deposit', component: DepositComponent },
   { path: 'history', component: HistoryComponent },
+  { path: 'onboarding', component: OnboardingComponent },
   { path: '**', redirectTo: 'account' }
 ];
 

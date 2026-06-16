@@ -6,6 +6,7 @@ import { Account } from '../models/account.model';
 import { TransferAccepted } from '../models/transfer-accepted.model';
 import { DepositReceipt } from '../models/deposit-receipt.model';
 import { AccountEvent } from '../models/account-event.model';
+import { Onboarding } from '../models/onboarding.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +45,36 @@ export class BankingApiService {
       .pipe(catchError(this.handleError));
   }
 
+  startOnboarding(email: string): Observable<Onboarding> {
+    return this.http
+      .post<Onboarding>(`${this.baseUrl}/onboarding`, { email })
+      .pipe(catchError(this.handleError));
+  }
+
+  verifyEmail(id: string, code: string): Observable<Onboarding> {
+    return this.http
+      .post<Onboarding>(`${this.baseUrl}/onboarding/${id}/verify-email`, { code })
+      .pipe(catchError(this.handleError));
+  }
+
+  submitOnboardingInfo(id: string, name: string, phoneNumber: string): Observable<Onboarding> {
+    return this.http
+      .post<Onboarding>(`${this.baseUrl}/onboarding/${id}/info`, { name, phoneNumber })
+      .pipe(catchError(this.handleError));
+  }
+
+  verifyOnboardingToken(id: string, token: string): Observable<Onboarding> {
+    return this.http
+      .post<Onboarding>(`${this.baseUrl}/onboarding/${id}/verify-token`, { token })
+      .pipe(catchError(this.handleError));
+  }
+
+  scoreOnboarding(id: string, salary: number, occupation: string, monthlyCost: number, totalWealth: number): Observable<Onboarding> {
+    return this.http
+      .post<Onboarding>(`${this.baseUrl}/onboarding/${id}/score`, { salary, occupation, monthlyCost, totalWealth })
+      .pipe(catchError(this.handleError));
+  }
+
   // Arrow-function property: it is passed by reference to catchError, so it must not rely on
   // a bound `this`. It classifies failures by the backend's machine-readable `code` field
   // (see the Kotlin ErrorResponse / DomainError.toResponse mapping).
@@ -67,6 +98,16 @@ export class BankingApiService {
           break;
         case 'INVALID_AMOUNT':
           message = 'Amount must be greater than zero.';
+          break;
+        case 'VERIFICATION_FAILED':
+          message = 'The code you entered is incorrect.';
+          break;
+        case 'STEP_OUT_OF_ORDER':
+          message = 'Please complete the previous step first.';
+          break;
+        case 'INVALID_CUSTOMER_INFO':
+        case 'ONBOARDING_NOT_FOUND':
+          message = error.error?.message ?? 'Onboarding error.';
           break;
         default:
           message = error.error?.message ? `Server error: ${error.error.message}` : message;
