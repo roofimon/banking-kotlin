@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Navigation', () => {
-  test('root redirects to /account', async ({ page }) => {
+  test('root shows the landing page', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveURL(/\/account/);
+    await expect(page.locator('.cb-menu-tile', { hasText: 'Open an account' })).toBeVisible();
+    await expect(page.locator('.cb-menu-tile', { hasText: 'Log in' })).toBeVisible();
   });
 
   test('clicking Send navigates to /transfer', async ({ page }) => {
