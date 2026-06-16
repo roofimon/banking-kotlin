@@ -7,5 +7,6 @@ import com.bank.memebank88.domain.Customer
 interface CustomerRepositoryPort {
     fun save(customer: Customer)
     fun findByAccountId(accountId: String): Option<Customer>
+    fun findByEmail(email: String): Option<Customer>
     fun deleteAll()
 }

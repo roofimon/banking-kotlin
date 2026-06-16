@@ -1,0 +1,23 @@
+<div class="cb-page">
+  <h1 class="cb-page-title">Log in</h1>
+
+  <div class="cb-card">
+    <div class="mb-4">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" [(ngModel)]="email" placeholder="you@example.com" (keyup.enter)="login()" />
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" [(ngModel)]="password" placeholder="Your password" (keyup.enter)="login()" />
+    </div>
+    <button class="btn btn-primary w-100" (click)="login()" [disabled]="loading || !email.trim() || !password.trim()">
+      {{ loading ? 'Signing in…' : 'Log in' }}
+    </button>
+
+    <p class="text-muted small mt-3 mb-0">
+      No account yet? <a routerLink="/onboarding">Open one</a>.
+    </p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+</div>

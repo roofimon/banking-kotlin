@@ -1,6 +1,6 @@
 <nav class="cb-navbar">
   <div class="container d-flex align-items-center justify-content-between">
-    <a class="cb-navbar-brand">
+    <a routerLink="/" class="cb-navbar-brand">
       <div class="cb-logo">₿</div>
       Coinbase
     </a>
@@ -17,8 +17,16 @@
       <a routerLink="/history" routerLinkActive="active-link" class="cb-nav-link">
         History
       </a>
-      <a routerLink="/onboarding" routerLinkActive="active-link" class="cb-nav-link">
-        Onboard
+      <ng-container *ngIf="(session.user$ | async) === null">
+        <a routerLink="/onboarding" routerLinkActive="active-link" class="cb-nav-link">
+          Onboard
+        </a>
+        <a routerLink="/login" routerLinkActive="active-link" class="cb-nav-link">
+          Log in
+        </a>
+      </ng-container>
+      <a *ngIf="session.user$ | async" class="cb-nav-link" role="button" style="cursor: pointer;" (click)="logout()">
+        Log out
       </a>
     </div>
   </div>

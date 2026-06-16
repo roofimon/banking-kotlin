@@ -26,10 +26,10 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('we');
   });
 
-  it('should render title', () => {
+  it('should render the navbar brand', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, we');
+    expect(compiled.querySelector('.cb-navbar-brand')?.textContent).toContain('Coinbase');
   });
 });

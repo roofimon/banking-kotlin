@@ -40,6 +40,16 @@ class JdbcCustomerRepository(private val jdbcTemplate: JdbcTemplate) : CustomerR
             accountId,
         ).firstOrNull().toOption()
 
+    override fun findByEmail(email: String): Option<Customer> =
+        jdbcTemplate.query(
+            """
+            select ACCOUNT_ID, EMAIL, NAME, PHONE, PASSWORD, CREDIT_SCORE, CREATED_AT
+            from CUSTOMER where EMAIL = ?
+            """.trimIndent(),
+            CustomerRowMapper(),
+            email,
+        ).firstOrNull().toOption()
+
     override fun deleteAll() {
         jdbcTemplate.update("delete from CUSTOMER")
     }

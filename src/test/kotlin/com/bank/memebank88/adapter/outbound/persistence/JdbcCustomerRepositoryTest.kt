@@ -52,4 +52,18 @@ class JdbcCustomerRepositoryTest {
     fun missingAccountReturnsNone() {
         assertThat(repository.findByAccountId("NOPE").getOrNull(), nullValue())
     }
+
+    @Test
+    fun findsByEmail() {
+        repository.save(Customer("AC0000003", "login@example.com", "Log In", "0822222222", "Pw345", 700, Instant.now()))
+
+        val found = repository.findByEmail("login@example.com").getOrNull()!!
+        assertThat(found.accountId, equalTo("AC0000003"))
+        assertThat(found.password, equalTo("Pw345"))
+    }
+
+    @Test
+    fun missingEmailReturnsNone() {
+        assertThat(repository.findByEmail("nobody@example.com").getOrNull(), nullValue())
+    }
 }

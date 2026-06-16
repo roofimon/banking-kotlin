@@ -30,6 +30,8 @@ fun DomainError.toResponse(): ResponseEntity<ErrorResponse> {
             Triple(HttpStatus.UNPROCESSABLE_ENTITY, "VERIFICATION_FAILED", "The $kind verification code did not match.")
         is DomainError.InvalidCustomerInfo ->
             Triple(HttpStatus.BAD_REQUEST, "INVALID_CUSTOMER_INFO", reason)
+        is DomainError.InvalidCredentials ->
+            Triple(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid email or password.")
     }
     return ResponseEntity.status(status).body(ErrorResponse(status.value(), status.reasonPhrase, code, message))
 }

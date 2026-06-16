@@ -15,5 +15,8 @@ class InMemoryCustomerRepository : CustomerRepositoryPort {
 
     override fun findByAccountId(accountId: String): Option<Customer> = store[accountId].toOption()
 
+    override fun findByEmail(email: String): Option<Customer> =
+        store.values.firstOrNull { it.email == email }.toOption()
+
     override fun deleteAll() = store.clear()
 }

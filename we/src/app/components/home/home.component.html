@@ -1,0 +1,51 @@
+<div class="cb-page">
+  <!-- Logged out: choose an entry point -->
+  <ng-container *ngIf="(session.user$ | async) === null; else loggedIn">
+    <h1 class="cb-page-title">Welcome to Coinbase</h1>
+    <p class="text-muted">Choose how you'd like to get started.</p>
+
+    <div class="cb-menu">
+      <a routerLink="/login" class="cb-menu-tile">
+        <div class="cb-menu-icon">→</div>
+        <div>
+          <div class="cb-menu-title">Log in</div>
+          <div class="cb-menu-sub">Access your existing account.</div>
+        </div>
+      </a>
+
+      <a routerLink="/onboarding" class="cb-menu-tile">
+        <div class="cb-menu-icon">+</div>
+        <div>
+          <div class="cb-menu-title">Open an account</div>
+          <div class="cb-menu-sub">New here? Start onboarding.</div>
+        </div>
+      </a>
+    </div>
+  </ng-container>
+
+  <!-- Logged in: welcome + portfolio shortcut + logout -->
+  <ng-template #loggedIn>
+    <ng-container *ngIf="session.user$ | async as user">
+      <h1 class="cb-page-title">Welcome back, {{ user.name }}</h1>
+      <p class="text-muted">You're signed in.</p>
+
+      <div class="cb-menu">
+        <a [routerLink]="['/account']" [queryParams]="{ id: user.accountId }" class="cb-menu-tile">
+          <div class="cb-menu-icon">$</div>
+          <div>
+            <div class="cb-menu-title">Go to portfolio</div>
+            <div class="cb-menu-sub">View account {{ user.accountId }}.</div>
+          </div>
+        </a>
+
+        <a class="cb-menu-tile" role="button" (click)="logout()">
+          <div class="cb-menu-icon">←</div>
+          <div>
+            <div class="cb-menu-title">Log out</div>
+            <div class="cb-menu-sub">End your session.</div>
+          </div>
+        </a>
+      </div>
+    </ng-container>
+  </ng-template>
+</div>

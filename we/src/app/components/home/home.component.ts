@@ -1,15 +1,13 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { SessionService } from './services/session.service';
+import { SessionService } from '../../services/session.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.scss'
 })
-export class AppComponent {
-  title = 'we';
-
+export class HomeComponent {
   constructor(public session: SessionService, private router: Router) {}
 
   logout(): void {

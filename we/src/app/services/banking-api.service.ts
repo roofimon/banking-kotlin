@@ -7,6 +7,7 @@ import { TransferAccepted } from '../models/transfer-accepted.model';
 import { DepositReceipt } from '../models/deposit-receipt.model';
 import { AccountEvent } from '../models/account-event.model';
 import { Onboarding } from '../models/onboarding.model';
+import { LoginResult } from '../models/login.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -69,6 +70,12 @@ export class BankingApiService {
       .pipe(catchError(this.handleError));
   }
 
+  login(email: string, password: string): Observable<LoginResult> {
+    return this.http
+      .post<LoginResult>(`${this.baseUrl}/login`, { email, password })
+      .pipe(catchError(this.handleError));
+  }
+
   scoreOnboarding(id: string, salary: number, occupation: string, monthlyCost: number, totalWealth: number): Observable<Onboarding> {
     return this.http
       .post<Onboarding>(`${this.baseUrl}/onboarding/${id}/score`, { salary, occupation, monthlyCost, totalWealth })
@@ -101,6 +108,9 @@ export class BankingApiService {
           break;
         case 'VERIFICATION_FAILED':
           message = 'The code you entered is incorrect.';
+          break;
+        case 'INVALID_CREDENTIALS':
+          message = 'Invalid email or password.';
           break;
         case 'STEP_OUT_OF_ORDER':
           message = 'Please complete the previous step first.';

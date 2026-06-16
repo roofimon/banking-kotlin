@@ -37,4 +37,7 @@ sealed interface DomainError {
 
     /** Customer info (name/phone) failed validation. */
     data class InvalidCustomerInfo(val reason: String) : DomainError
+
+    /** Login email/password did not match any customer. */
+    data object InvalidCredentials : DomainError
 }

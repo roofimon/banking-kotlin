@@ -12,10 +12,14 @@ import { DepositComponent } from './components/deposit/deposit.component';
 import { DepositReceiptComponent } from './components/deposit-receipt/deposit-receipt.component';
 import { HistoryComponent } from './components/history/history.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
+import { HomeComponent } from './components/home/home.component';
+import { LoginComponent } from './components/login/login.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    HomeComponent,
+    LoginComponent,
     AccountLookupComponent,
     TransferComponent,
     TransferReceiptComponent,
