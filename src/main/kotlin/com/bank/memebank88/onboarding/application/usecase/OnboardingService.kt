@@ -6,12 +6,14 @@ import com.bank.memebank88.onboarding.domain.Customer
 import com.bank.memebank88.onboarding.domain.OnboardingError
 import com.bank.memebank88.onboarding.domain.Onboarding
 import com.bank.memebank88.onboarding.domain.OnboardingStatus
+import com.bank.memebank88.onboarding.domain.event.OnboardingEvent
 import com.bank.memebank88.onboarding.port.inbound.OnboardingUseCase
 import com.bank.memebank88.onboarding.port.outbound.AccountProvisioningPort
 import com.bank.memebank88.onboarding.port.outbound.CreditScoringPort
 import com.bank.memebank88.onboarding.port.outbound.CustomerRepositoryPort
 import com.bank.memebank88.onboarding.port.outbound.OnboardingRepositoryPort
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
@@ -23,6 +25,7 @@ class OnboardingService(
     private val creditScoring: CreditScoringPort,
     private val accountProvisioning: AccountProvisioningPort,
     private val customers: CustomerRepositoryPort,
+    private val events: ApplicationEventPublisher,
 ) : OnboardingUseCase {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -38,12 +41,14 @@ class OnboardingService(
             createdAt = Instant.now(),
         )
         repository.save(onboarding)
+        events.publishEvent(OnboardingEvent.OnboardingStarted(onboarding.id, onboarding.email, Instant.now()))
         onboarding
     }
 
     override fun verifyEmail(id: String, code: String): Either<OnboardingError, Onboarding> = either {
         val updated = load(id).bind().verifyEmail(code).bind()
         repository.save(updated)
+        events.publishEvent(OnboardingEvent.OnboardingEmailVerified(updated.id, updated.email, Instant.now()))
         updated
     }
 
@@ -52,12 +57,14 @@ class OnboardingService(
         log.info("Onboarding session token for {}: {}", id, token)
         val updated = load(id).bind().submitInfo(name, phone, token).bind()
         repository.save(updated)
+        events.publishEvent(OnboardingEvent.OnboardingInfoSubmitted(updated.id, name, phone, Instant.now()))
         updated
     }
 
     override fun verifyToken(id: String, token: String): Either<OnboardingError, Onboarding> = either {
         val updated = load(id).bind().verifyToken(token).bind()
         repository.save(updated)
+        events.publishEvent(OnboardingEvent.OnboardingTokenVerified(updated.id, Instant.now()))
         updated
     }
 
@@ -71,6 +78,15 @@ class OnboardingService(
         if (completed.status == OnboardingStatus.COMPLETED && completed.accountId != null) {
             customers.save(completed.toCustomer())
             log.info("Onboarding {} approved; saved customer for account {}", id, completed.accountId)
+            events.publishEvent(
+                OnboardingEvent.OnboardingApproved(
+                    completed.id, completed.email, completed.accountId, decision.score, Instant.now(),
+                ),
+            )
+        } else {
+            events.publishEvent(
+                OnboardingEvent.OnboardingRejected(completed.id, completed.email, decision.score, Instant.now()),
+            )
         }
         completed
     }

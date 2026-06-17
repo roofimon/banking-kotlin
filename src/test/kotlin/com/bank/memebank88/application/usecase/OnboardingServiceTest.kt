@@ -4,6 +4,7 @@ import com.bank.memebank88.onboarding.adapter.outbound.persistence.InMemoryCusto
 import com.bank.memebank88.onboarding.adapter.outbound.persistence.InMemoryOnboardingRepository
 import com.bank.memebank88.onboarding.domain.OnboardingError
 import com.bank.memebank88.onboarding.domain.OnboardingStatus
+import com.bank.memebank88.onboarding.domain.event.OnboardingEvent
 import com.bank.memebank88.onboarding.port.outbound.AccountProvisioningPort
 import com.bank.memebank88.onboarding.port.outbound.CreditDecision
 import com.bank.memebank88.onboarding.port.outbound.CreditScoringPort
@@ -15,10 +16,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.springframework.context.ApplicationEventPublisher
 
 class OnboardingServiceTest {
 
@@ -26,6 +30,7 @@ class OnboardingServiceTest {
     private lateinit var customers: InMemoryCustomerRepository
     private lateinit var creditScoring: CreditScoringPort
     private lateinit var accountProvisioning: AccountProvisioningPort
+    private lateinit var events: ApplicationEventPublisher
     private lateinit var service: OnboardingService
 
     @BeforeEach
@@ -34,7 +39,8 @@ class OnboardingServiceTest {
         customers = InMemoryCustomerRepository()
         creditScoring = mock(CreditScoringPort::class.java)
         accountProvisioning = mock(AccountProvisioningPort::class.java)
-        service = OnboardingService(repository, creditScoring, accountProvisioning, customers)
+        events = mock(ApplicationEventPublisher::class.java)
+        service = OnboardingService(repository, creditScoring, accountProvisioning, customers, events)
     }
 
     /** Drives the flow up to (but not including) scoring; returns the onboarding id. */
@@ -81,6 +87,48 @@ class OnboardingServiceTest {
         verify(accountProvisioning, never()).createAccount(anyDouble())
         assertThat(customers.findByAccountId("AC0000001").getOrNull(), nullValue())
         assertThat(result.password, nullValue())
+    }
+
+    @Test
+    fun publishesAnEventForEachLifecycleTransitionThroughApproval() {
+        `when`(creditScoring.assess(any(), any(), any(), any())).thenReturn(CreditDecision(720, approved = true))
+        `when`(accountProvisioning.createAccount(0.0)).thenReturn("AC0000001")
+
+        val id = reachTokenVerified()
+        service.score(id, 50000.0, "SALARIED", 2000.0, 100000.0)
+
+        val captor = argumentCaptor<Any>()
+        verify(events, times(5)).publishEvent(captor.capture())
+        assertThat(
+            captor.allValues.map { it::class },
+            equalTo(
+                listOf(
+                    OnboardingEvent.OnboardingStarted::class,
+                    OnboardingEvent.OnboardingEmailVerified::class,
+                    OnboardingEvent.OnboardingInfoSubmitted::class,
+                    OnboardingEvent.OnboardingTokenVerified::class,
+                    OnboardingEvent.OnboardingApproved::class,
+                ),
+            ),
+        )
+        val approved = captor.allValues.last() as OnboardingEvent.OnboardingApproved
+        assertThat(approved.accountId, equalTo("AC0000001"))
+        assertThat(approved.creditScore, equalTo(720))
+        assertThat(approved.email, equalTo("jane@example.com"))
+    }
+
+    @Test
+    fun publishesRejectedEventWhenScoreTooLow() {
+        `when`(creditScoring.assess(any(), any(), any(), any())).thenReturn(CreditDecision(450, approved = false))
+
+        val id = reachTokenVerified()
+        service.score(id, 12000.0, "UNEMPLOYED", 15000.0, 0.0)
+
+        val captor = argumentCaptor<Any>()
+        verify(events, times(5)).publishEvent(captor.capture())
+        val last = captor.allValues.last()
+        assertThat(last, instanceOf(OnboardingEvent.OnboardingRejected::class.java))
+        assertThat((last as OnboardingEvent.OnboardingRejected).creditScore, equalTo(450))
     }
 
     @Test
