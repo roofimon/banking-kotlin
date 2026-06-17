@@ -1,7 +1,7 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.banking.adapter.outbound.persistence
 
-import com.bank.memebank88.domain.event.AccountEvent
-import com.bank.memebank88.port.outbound.EventStorePort
+import com.bank.memebank88.banking.domain.event.AccountEvent
+import com.bank.memebank88.banking.port.outbound.EventStorePort
 
 class InMemoryEventStore : EventStorePort {
 

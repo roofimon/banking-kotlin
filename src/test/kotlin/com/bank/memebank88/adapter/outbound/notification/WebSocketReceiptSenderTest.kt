@@ -1,7 +1,7 @@
-package com.bank.memebank88.adapter.outbound.notification
+package com.bank.memebank88.banking.adapter.outbound.notification
 
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.TransferReceipt
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.TransferReceipt
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify

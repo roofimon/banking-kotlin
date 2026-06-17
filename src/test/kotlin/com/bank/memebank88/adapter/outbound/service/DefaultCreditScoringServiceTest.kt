@@ -1,4 +1,4 @@
-package com.bank.memebank88.adapter.outbound.service
+package com.bank.memebank88.onboarding.adapter.outbound.service
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat

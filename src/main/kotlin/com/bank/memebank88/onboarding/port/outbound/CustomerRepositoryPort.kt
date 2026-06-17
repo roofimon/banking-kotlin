@@ -1,0 +1,12 @@
+package com.bank.memebank88.onboarding.port.outbound
+
+import arrow.core.Option
+import com.bank.memebank88.onboarding.domain.Customer
+
+/** Outbound port for persisting customers created when onboarding is approved. */
+interface CustomerRepositoryPort {
+    fun save(customer: Customer)
+    fun findByAccountId(accountId: String): Option<Customer>
+    fun findByEmail(email: String): Option<Customer>
+    fun deleteAll()
+}

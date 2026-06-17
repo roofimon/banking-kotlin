@@ -1,13 +1,13 @@
-package com.bank.memebank88.adapter.inbound.web
+package com.bank.memebank88.onboarding.adapter.inbound.web
 
 import arrow.core.left
 import arrow.core.right
-import com.bank.memebank88.adapter.inbound.web.dto.ErrorResponse
-import com.bank.memebank88.adapter.inbound.web.dto.LoginRequest
-import com.bank.memebank88.adapter.inbound.web.dto.LoginResponse
-import com.bank.memebank88.domain.Customer
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.port.inbound.LoginUseCase
+import com.bank.memebank88.shared.ErrorResponse
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.LoginRequest
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.LoginResponse
+import com.bank.memebank88.onboarding.domain.Customer
+import com.bank.memebank88.onboarding.domain.OnboardingError
+import com.bank.memebank88.onboarding.port.inbound.LoginUseCase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -46,7 +46,7 @@ class LoginControllerTest {
     @Test
     fun invalidCredentialsReturn401() {
         `when`(login.login("jane@example.com", "wrong"))
-            .thenReturn(DomainError.InvalidCredentials.left())
+            .thenReturn(OnboardingError.InvalidCredentials.left())
 
         val result = controller.login(LoginRequest("jane@example.com", "wrong"))
 

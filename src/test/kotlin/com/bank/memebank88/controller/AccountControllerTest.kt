@@ -1,25 +1,25 @@
-package com.bank.memebank88.adapter.inbound.web
+package com.bank.memebank88.banking.adapter.inbound.web
 
 import arrow.core.None
 import arrow.core.Some
 import arrow.core.left
 import arrow.core.right
-import com.bank.memebank88.adapter.inbound.web.dto.AccountEventDto
-import com.bank.memebank88.adapter.inbound.web.dto.ErrorResponse
-import com.bank.memebank88.adapter.inbound.web.dto.TransferAcceptedResponse
-import com.bank.memebank88.adapter.inbound.web.dto.TransferReceiptDto
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.DepositReceipt
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.domain.TransferId
-import com.bank.memebank88.domain.event.AccountCreditedEvent
-import com.bank.memebank88.port.inbound.DepositUseCase
-import com.bank.memebank88.port.inbound.TransferCommand
-import com.bank.memebank88.port.inbound.TransferUseCase
-import com.bank.memebank88.port.outbound.AccountRepositoryPort
-import com.bank.memebank88.port.outbound.EventStorePort
-import com.bank.memebank88.port.outbound.StoredTransferReceipt
-import com.bank.memebank88.port.outbound.TransferReceiptRepositoryPort
+import com.bank.memebank88.banking.adapter.inbound.web.dto.AccountEventDto
+import com.bank.memebank88.shared.ErrorResponse
+import com.bank.memebank88.banking.adapter.inbound.web.dto.TransferAcceptedResponse
+import com.bank.memebank88.banking.adapter.inbound.web.dto.TransferReceiptDto
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.DepositReceipt
+import com.bank.memebank88.banking.domain.BankingError
+import com.bank.memebank88.banking.domain.TransferId
+import com.bank.memebank88.banking.domain.event.AccountCreditedEvent
+import com.bank.memebank88.banking.port.inbound.DepositUseCase
+import com.bank.memebank88.banking.port.inbound.TransferCommand
+import com.bank.memebank88.banking.port.inbound.TransferUseCase
+import com.bank.memebank88.banking.port.outbound.AccountRepositoryPort
+import com.bank.memebank88.banking.port.outbound.EventStorePort
+import com.bank.memebank88.banking.port.outbound.StoredTransferReceipt
+import com.bank.memebank88.banking.port.outbound.TransferReceiptRepositoryPort
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -80,7 +80,7 @@ class AccountControllerTest {
         val srcId = "A123"
         val destId = "B123"
         `when`(transferUseCase.transfer(TransferCommand(200.00, srcId, destId)))
-            .thenReturn(DomainError.InsufficientFunds(srcId, 200.00, 100.00).left())
+            .thenReturn(BankingError.InsufficientFunds(srcId, 200.00, 100.00).left())
 
         val result = controller.handleTransfer(srcId, 200.00, destId)
 
@@ -107,7 +107,7 @@ class AccountControllerTest {
         val accountId = "C456"
         val amount = 0.001
         `when`(depositUseCase.deposit(amount, accountId))
-            .thenReturn(DomainError.BelowMinimum(amount, 0.01, "deposit").left())
+            .thenReturn(BankingError.BelowMinimum(amount, 0.01, "deposit").left())
 
         val result = controller.handleDeposit(accountId, amount)
 

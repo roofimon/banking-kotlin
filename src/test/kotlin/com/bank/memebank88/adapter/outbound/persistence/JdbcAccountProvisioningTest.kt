@@ -1,4 +1,4 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.onboarding.adapter.outbound.persistence
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat

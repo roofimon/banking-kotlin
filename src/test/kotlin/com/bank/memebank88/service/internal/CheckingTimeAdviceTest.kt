@@ -1,7 +1,7 @@
-package com.bank.memebank88.adapter.outbound.service
+package com.bank.memebank88.banking.adapter.outbound.service
 
-import com.bank.memebank88.application.exception.OutOfServiceException
-import com.bank.memebank88.port.outbound.TimeServicePort
+import com.bank.memebank88.banking.application.exception.OutOfServiceException
+import com.bank.memebank88.banking.port.outbound.TimeServicePort
 import org.aopalliance.intercept.MethodInvocation
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.fail

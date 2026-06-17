@@ -1,11 +1,11 @@
-package com.bank.memebank88.integration
+package com.bank.memebank88.banking.integration
 
-import com.bank.memebank88.adapter.outbound.persistence.EventSourcedAccountRepository
-import com.bank.memebank88.adapter.outbound.persistence.JdbcEventStore
-import com.bank.memebank88.adapter.outbound.service.ZeroFeePolicy
-import com.bank.memebank88.application.usecase.DepositMoneyUseCase
-import com.bank.memebank88.application.usecase.TransferMoneyUseCase
-import com.bank.memebank88.port.inbound.TransferCommand
+import com.bank.memebank88.banking.adapter.outbound.persistence.EventSourcedAccountRepository
+import com.bank.memebank88.banking.adapter.outbound.persistence.JdbcEventStore
+import com.bank.memebank88.banking.adapter.outbound.service.ZeroFeePolicy
+import com.bank.memebank88.banking.application.usecase.DepositMoneyUseCase
+import com.bank.memebank88.banking.application.usecase.TransferMoneyUseCase
+import com.bank.memebank88.banking.port.inbound.TransferCommand
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test

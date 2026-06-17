@@ -1,11 +1,11 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.banking.adapter.outbound.persistence
 
 import arrow.core.Option
 import arrow.core.toOption
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.event.AccountCreditedEvent
-import com.bank.memebank88.domain.event.AccountDebitedEvent
-import com.bank.memebank88.port.outbound.AccountRepositoryPort
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.event.AccountCreditedEvent
+import com.bank.memebank88.banking.domain.event.AccountDebitedEvent
+import com.bank.memebank88.banking.port.outbound.AccountRepositoryPort
 
 class InMemoryEventSourcedAccountRepository(
     initialBalances: Map<String, Double>,

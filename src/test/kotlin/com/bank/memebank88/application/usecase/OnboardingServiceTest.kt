@@ -1,12 +1,12 @@
-package com.bank.memebank88.application.usecase
+package com.bank.memebank88.onboarding.application.usecase
 
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryCustomerRepository
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryOnboardingRepository
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.domain.OnboardingStatus
-import com.bank.memebank88.port.outbound.AccountProvisioningPort
-import com.bank.memebank88.port.outbound.CreditDecision
-import com.bank.memebank88.port.outbound.CreditScoringPort
+import com.bank.memebank88.onboarding.adapter.outbound.persistence.InMemoryCustomerRepository
+import com.bank.memebank88.onboarding.adapter.outbound.persistence.InMemoryOnboardingRepository
+import com.bank.memebank88.onboarding.domain.OnboardingError
+import com.bank.memebank88.onboarding.domain.OnboardingStatus
+import com.bank.memebank88.onboarding.port.outbound.AccountProvisioningPort
+import com.bank.memebank88.onboarding.port.outbound.CreditDecision
+import com.bank.memebank88.onboarding.port.outbound.CreditScoringPort
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.nullValue
@@ -87,7 +87,7 @@ class OnboardingServiceTest {
     fun wrongEmailCodeFails() {
         val started = service.start("jane@example.com").getOrNull()!!
         val error = service.verifyEmail(started.id, "000000").leftOrNull()
-        assertThat(error, instanceOf(DomainError.VerificationFailed::class.java))
+        assertThat(error, instanceOf(OnboardingError.VerificationFailed::class.java))
     }
 
     @Test
@@ -95,13 +95,13 @@ class OnboardingServiceTest {
         val started = service.start("jane@example.com").getOrNull()!!
         // submit info before verifying email
         val error = service.submitInfo(started.id, "Jane", "0812345678").leftOrNull()
-        assertThat(error, instanceOf(DomainError.OnboardingStepOutOfOrder::class.java))
+        assertThat(error, instanceOf(OnboardingError.OnboardingStepOutOfOrder::class.java))
     }
 
     @Test
     fun unknownOnboardingFails() {
         val error = service.verifyEmail("does-not-exist", "123456").leftOrNull()
-        assertThat(error, instanceOf(DomainError.OnboardingNotFound::class.java))
+        assertThat(error, instanceOf(OnboardingError.OnboardingNotFound::class.java))
     }
 
     @Test
@@ -109,6 +109,6 @@ class OnboardingServiceTest {
         val started = service.start("jane@example.com").getOrNull()!!
         service.verifyEmail(started.id, started.emailCode)
         val error = service.submitInfo(started.id, "  ", "0812345678").leftOrNull()
-        assertThat(error, instanceOf(DomainError.InvalidCustomerInfo::class.java))
+        assertThat(error, instanceOf(OnboardingError.InvalidCustomerInfo::class.java))
     }
 }
