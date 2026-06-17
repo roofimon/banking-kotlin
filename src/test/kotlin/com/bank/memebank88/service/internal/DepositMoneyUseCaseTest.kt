@@ -1,15 +1,15 @@
-package com.bank.memebank88.application.usecase
+package com.bank.memebank88.banking.application.usecase
 
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_INITIAL_BAL
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_INITIAL_BAL
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.Z999_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventStore
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.port.inbound.DepositUseCase
-import com.bank.memebank88.port.outbound.AccountRepositoryPort
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_INITIAL_BAL
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_INITIAL_BAL
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.Z999_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventStore
+import com.bank.memebank88.banking.domain.BankingError
+import com.bank.memebank88.banking.port.inbound.DepositUseCase
+import com.bank.memebank88.banking.port.outbound.AccountRepositoryPort
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
@@ -63,25 +63,25 @@ class DepositMoneyUseCaseTest {
     @Test
     fun testNonExistentAccount() {
         val error = depositService.deposit(10.00, Z999_ID).leftOrNull()
-        assertThat(error, instanceOf(DomainError.AccountNotFound::class.java))
+        assertThat(error, instanceOf(BankingError.AccountNotFound::class.java))
     }
 
     @Test
     fun testZeroDepositAmount() {
         val error = depositService.deposit(0.00, C456_ID).leftOrNull()
-        assertThat(error, instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
     fun testNegativeDepositAmount() {
         val error = depositService.deposit(-10.00, C456_ID).leftOrNull()
-        assertThat(error, instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
     fun testDepositAmountLessThanMinimum() {
         val error = depositService.deposit(0.001, C456_ID).leftOrNull()
-        assertThat(error, instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
@@ -93,7 +93,7 @@ class DepositMoneyUseCaseTest {
         val error = depositService.deposit(3.00, C456_ID).leftOrNull()
         assertThat(
             "expected BelowMinimum on 3.00 deposit that violates 5.00 minimum",
-            error, instanceOf(DomainError.BelowMinimum::class.java)
+            error, instanceOf(BankingError.BelowMinimum::class.java)
         )
     }
 }

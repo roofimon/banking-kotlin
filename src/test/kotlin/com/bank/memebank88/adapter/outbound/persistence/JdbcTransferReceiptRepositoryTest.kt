@@ -1,7 +1,7 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.banking.adapter.outbound.persistence
 
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.TransferReceipt
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.TransferReceipt
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.BeforeEach

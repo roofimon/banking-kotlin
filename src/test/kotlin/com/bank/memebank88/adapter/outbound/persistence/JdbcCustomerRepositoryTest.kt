@@ -1,6 +1,6 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.onboarding.adapter.outbound.persistence
 
-import com.bank.memebank88.domain.Customer
+import com.bank.memebank88.onboarding.domain.Customer
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat

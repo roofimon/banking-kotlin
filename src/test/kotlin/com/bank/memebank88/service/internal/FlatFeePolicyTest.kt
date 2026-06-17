@@ -1,4 +1,4 @@
-package com.bank.memebank88.adapter.outbound.service
+package com.bank.memebank88.banking.adapter.outbound.service
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

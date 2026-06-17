@@ -1,9 +1,9 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.onboarding.adapter.outbound.persistence
 
 import arrow.core.Option
 import arrow.core.toOption
-import com.bank.memebank88.domain.Onboarding
-import com.bank.memebank88.port.outbound.OnboardingRepositoryPort
+import com.bank.memebank88.onboarding.domain.Onboarding
+import com.bank.memebank88.onboarding.port.outbound.OnboardingRepositoryPort
 
 /** In-memory [OnboardingRepositoryPort] for use-case tests — load/save across steps. */
 class InMemoryOnboardingRepository : OnboardingRepositoryPort {

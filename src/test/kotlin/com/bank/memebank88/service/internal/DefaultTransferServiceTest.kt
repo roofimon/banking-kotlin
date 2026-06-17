@@ -1,25 +1,25 @@
-package com.bank.memebank88.application.usecase
+package com.bank.memebank88.banking.application.usecase
 
 import arrow.core.Some
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_INITIAL_BAL
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_INITIAL_BAL
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.Z999_ID
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryEventStore
-import com.bank.memebank88.adapter.outbound.service.FlatFeePolicy
-import com.bank.memebank88.adapter.outbound.service.ZeroFeePolicy
-import com.bank.memebank88.application.event.TransferCompletedEvent
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.domain.TransferReceipt
-import com.bank.memebank88.port.inbound.TransferCommand
-import com.bank.memebank88.port.inbound.TransferUseCase
-import com.bank.memebank88.port.outbound.AccountRepositoryPort
-import com.bank.memebank88.port.outbound.EventStorePort
-import com.bank.memebank88.port.outbound.FeePolicyPort
-import com.bank.memebank88.port.outbound.TimeServicePort
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.A123_INITIAL_BAL
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.C456_INITIAL_BAL
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventSourcedAccountRepository.Companion.Z999_ID
+import com.bank.memebank88.banking.adapter.outbound.persistence.InMemoryEventStore
+import com.bank.memebank88.banking.adapter.outbound.service.FlatFeePolicy
+import com.bank.memebank88.banking.adapter.outbound.service.ZeroFeePolicy
+import com.bank.memebank88.banking.application.event.TransferCompletedEvent
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.BankingError
+import com.bank.memebank88.banking.domain.TransferReceipt
+import com.bank.memebank88.banking.port.inbound.TransferCommand
+import com.bank.memebank88.banking.port.inbound.TransferUseCase
+import com.bank.memebank88.banking.port.outbound.AccountRepositoryPort
+import com.bank.memebank88.banking.port.outbound.EventStorePort
+import com.bank.memebank88.banking.port.outbound.FeePolicyPort
+import com.bank.memebank88.banking.port.outbound.TimeServicePort
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -165,7 +165,7 @@ class DefaultTransferServiceTest {
 
         val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
 
-        assertThat(error, CoreMatchers.instanceOf(DomainError.OutOfService::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.OutOfService::class.java))
         verify(mockTimeService).isServiceAvailable(any<LocalTime>())
     }
 
@@ -176,13 +176,13 @@ class DefaultTransferServiceTest {
 
         val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
 
-        assertThat(error, CoreMatchers.instanceOf(DomainError.InsufficientFunds::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.InsufficientFunds::class.java))
     }
 
     @Test
     fun testNonExistentSourceAccount() {
         val error = transferService.transfer(TransferCommand(1.00, Z999_ID, C456_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.AccountNotFound::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.AccountNotFound::class.java))
 
         assertThat(accountRepository.findById(C456_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(C456_INITIAL_BAL))
     }
@@ -190,7 +190,7 @@ class DefaultTransferServiceTest {
     @Test
     fun testNonExistentDestinationAccount() {
         val error = transferService.transfer(TransferCommand(1.00, A123_ID, Z999_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.AccountNotFound::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.AccountNotFound::class.java))
 
         assertThat(accountRepository.findById(A123_ID).getOrNull()!!.getBalance(), CoreMatchers.equalTo(A123_INITIAL_BAL))
     }
@@ -198,19 +198,19 @@ class DefaultTransferServiceTest {
     @Test
     fun testZeroTransferAmount() {
         val error = transferService.transfer(TransferCommand(0.00, A123_ID, C456_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
     fun testNegativeTransferAmount() {
         val error = transferService.transfer(TransferCommand(-100.00, A123_ID, C456_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
     fun testTransferAmountLessThanOneCent() {
         val error = transferService.transfer(TransferCommand(0.009, A123_ID, C456_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.BelowMinimum::class.java))
     }
 
     @Test
@@ -222,7 +222,7 @@ class DefaultTransferServiceTest {
         val error = transferService.transfer(TransferCommand(9.00, A123_ID, C456_ID)).leftOrNull()
         assertThat(
             "expected BelowMinimum on 9.00 transfer that violates 10.00 minimum",
-            error, CoreMatchers.instanceOf(DomainError.BelowMinimum::class.java)
+            error, CoreMatchers.instanceOf(BankingError.BelowMinimum::class.java)
         )
     }
 
@@ -249,6 +249,6 @@ class DefaultTransferServiceTest {
         transferService = TransferMoneyUseCase(accountRepository, FlatFeePolicy(flatFee), eventStore, eventPublisher)
 
         val error = transferService.transfer(TransferCommand(transferAmount, A123_ID, C456_ID)).leftOrNull()
-        assertThat(error, CoreMatchers.instanceOf(DomainError.InsufficientFunds::class.java))
+        assertThat(error, CoreMatchers.instanceOf(BankingError.InsufficientFunds::class.java))
     }
 }

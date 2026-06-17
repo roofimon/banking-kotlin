@@ -1,9 +1,9 @@
-package com.bank.memebank88.application.event
+package com.bank.memebank88.banking.application.event
 
-import com.bank.memebank88.domain.Account
-import com.bank.memebank88.domain.TransferReceipt
-import com.bank.memebank88.port.outbound.ReceiptSenderPort
-import com.bank.memebank88.port.outbound.TransferReceiptRepositoryPort
+import com.bank.memebank88.banking.domain.Account
+import com.bank.memebank88.banking.domain.TransferReceipt
+import com.bank.memebank88.banking.port.outbound.ReceiptSenderPort
+import com.bank.memebank88.banking.port.outbound.TransferReceiptRepositoryPort
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock

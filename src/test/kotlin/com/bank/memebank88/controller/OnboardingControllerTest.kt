@@ -1,17 +1,17 @@
-package com.bank.memebank88.adapter.inbound.web
+package com.bank.memebank88.onboarding.adapter.inbound.web
 
 import arrow.core.left
 import arrow.core.right
-import com.bank.memebank88.adapter.inbound.web.dto.CustomerInfoRequest
-import com.bank.memebank88.adapter.inbound.web.dto.ErrorResponse
-import com.bank.memebank88.adapter.inbound.web.dto.OnboardingResponse
-import com.bank.memebank88.adapter.inbound.web.dto.ScoreRequest
-import com.bank.memebank88.adapter.inbound.web.dto.StartOnboardingRequest
-import com.bank.memebank88.adapter.inbound.web.dto.VerifyCodeRequest
-import com.bank.memebank88.domain.DomainError
-import com.bank.memebank88.domain.Onboarding
-import com.bank.memebank88.domain.OnboardingStatus
-import com.bank.memebank88.port.inbound.OnboardingUseCase
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.CustomerInfoRequest
+import com.bank.memebank88.shared.ErrorResponse
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.OnboardingResponse
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.ScoreRequest
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.StartOnboardingRequest
+import com.bank.memebank88.onboarding.adapter.inbound.web.dto.VerifyCodeRequest
+import com.bank.memebank88.onboarding.domain.OnboardingError
+import com.bank.memebank88.onboarding.domain.Onboarding
+import com.bank.memebank88.onboarding.domain.OnboardingStatus
+import com.bank.memebank88.onboarding.port.inbound.OnboardingUseCase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -86,7 +86,7 @@ class OnboardingControllerTest {
     @Test
     fun verificationFailureReturns422() {
         `when`(onboarding.verifyEmail("ob-1", "000000"))
-            .thenReturn(DomainError.VerificationFailed("email").left())
+            .thenReturn(OnboardingError.VerificationFailed("email").left())
 
         val result = controller.verifyEmail("ob-1", VerifyCodeRequest("000000"))
 
@@ -97,7 +97,7 @@ class OnboardingControllerTest {
     @Test
     fun stepOutOfOrderReturns409() {
         `when`(onboarding.submitInfo("ob-1", "Jane", "0812345678"))
-            .thenReturn(DomainError.OnboardingStepOutOfOrder("EMAIL_VERIFIED", "STARTED").left())
+            .thenReturn(OnboardingError.OnboardingStepOutOfOrder("EMAIL_VERIFIED", "STARTED").left())
 
         val result = controller.submitInfo("ob-1", CustomerInfoRequest("Jane", "0812345678"))
 
@@ -107,7 +107,7 @@ class OnboardingControllerTest {
 
     @Test
     fun unknownOnboardingReturns404() {
-        `when`(onboarding.find("nope")).thenReturn(DomainError.OnboardingNotFound("nope").left())
+        `when`(onboarding.find("nope")).thenReturn(OnboardingError.OnboardingNotFound("nope").left())
 
         val result = controller.find("nope")
 

@@ -1,7 +1,7 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.onboarding.adapter.outbound.persistence
 
-import com.bank.memebank88.domain.Onboarding
-import com.bank.memebank88.domain.OnboardingStatus
+import com.bank.memebank88.onboarding.domain.Onboarding
+import com.bank.memebank88.onboarding.domain.OnboardingStatus
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat

@@ -1,9 +1,9 @@
-package com.bank.memebank88.adapter.outbound.persistence
+package com.bank.memebank88.onboarding.adapter.outbound.persistence
 
 import arrow.core.Option
 import arrow.core.toOption
-import com.bank.memebank88.domain.Customer
-import com.bank.memebank88.port.outbound.CustomerRepositoryPort
+import com.bank.memebank88.onboarding.domain.Customer
+import com.bank.memebank88.onboarding.port.outbound.CustomerRepositoryPort
 
 /** In-memory [CustomerRepositoryPort] for use-case tests. */
 class InMemoryCustomerRepository : CustomerRepositoryPort {

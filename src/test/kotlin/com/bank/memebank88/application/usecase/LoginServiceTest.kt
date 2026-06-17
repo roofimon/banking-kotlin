@@ -1,8 +1,8 @@
-package com.bank.memebank88.application.usecase
+package com.bank.memebank88.onboarding.application.usecase
 
-import com.bank.memebank88.adapter.outbound.persistence.InMemoryCustomerRepository
-import com.bank.memebank88.domain.Customer
-import com.bank.memebank88.domain.DomainError
+import com.bank.memebank88.onboarding.adapter.outbound.persistence.InMemoryCustomerRepository
+import com.bank.memebank88.onboarding.domain.Customer
+import com.bank.memebank88.onboarding.domain.OnboardingError
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
@@ -50,13 +50,13 @@ class LoginServiceTest {
     fun wrongPasswordIsRejected() {
         val result = service.login("jane@example.com", "wrong")
 
-        assertThat(result.leftOrNull(), instanceOf(DomainError.InvalidCredentials::class.java))
+        assertThat(result.leftOrNull(), instanceOf(OnboardingError.InvalidCredentials::class.java))
     }
 
     @Test
     fun unknownEmailIsRejected() {
         val result = service.login("nobody@example.com", "Ab3Cd")
 
-        assertThat(result.leftOrNull(), instanceOf(DomainError.InvalidCredentials::class.java))
+        assertThat(result.leftOrNull(), instanceOf(OnboardingError.InvalidCredentials::class.java))
     }
 }

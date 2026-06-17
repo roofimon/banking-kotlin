@@ -4,3 +4,6 @@
 .settings/*
 .vscode/
 target/
+
+# Scratch Jupyter notebooks (not part of the build)
+*.ipynb
