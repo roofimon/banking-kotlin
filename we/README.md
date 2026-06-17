@@ -28,14 +28,6 @@ npm install
 npx playwright install chromium   # download the Chromium browser binary
 ```
 
-The config (`playwright.config.ts`) launches Chromium from `/usr/bin/chromium-browser`
-by default (the CI path). On macOS, or to use the browser installed above, set
-`PW_CHROMIUM_PATH` to your binary:
-
-```bash
-export PW_CHROMIUM_PATH="$(find ~/Library/Caches/ms-playwright -name 'Google Chrome for Testing' -type f | head -1)"
-```
-
 With the backend running on port 8080 (`mvn spring-boot:run` from the repo root),
 run `npm run e2e`. Playwright starts the Angular dev server itself. See the
 [root README](../README.md#end-to-end-tests-playwright) for the full workflow and
